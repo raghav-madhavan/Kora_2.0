@@ -1,5 +1,9 @@
 import Link from "next/link";
 import { ArrowRight, Plus } from "lucide-react";
+import {
+  getBrightFuturesTiers,
+  getGraduationRequirement,
+} from "@/lib/compliance";
 import { student } from "@/lib/mock-data";
 
 function Sparkle({ className = "" }: { className?: string }) {
@@ -15,7 +19,13 @@ function Sparkle({ className = "" }: { className?: string }) {
 }
 
 export function Hero() {
-  const remaining = student.hoursRequired - student.hoursLogged;
+  const hoursRequired = getGraduationRequirement(student.schoolState);
+  const brightFutures = getBrightFuturesTiers(student.schoolState);
+  const remaining = hoursRequired - student.hoursLogged;
+
+  const subtitle = brightFutures
+    ? "FL Bright Futures · Graduation Service Requirement"
+    : "Graduation Service Requirement";
 
   return (
     <section className="relative mb-6 overflow-hidden rounded-card bg-gradient-to-br from-banner-from to-banner-to px-10 py-9 text-white shadow-raised">
@@ -24,21 +34,23 @@ export function Hero() {
       <Sparkle className="right-[30%] bottom-2 h-10 w-10 opacity-70" />
 
       <p className="mb-3 text-[12px] font-semibold uppercase tracking-[0.18em] text-white/75">
-        FL Bright Futures · Graduation Service Requirement
+        {subtitle}
       </p>
       <h1 className="max-w-xl text-[40px] font-extrabold leading-[1.08]">
-        You&apos;re {student.hoursLogged} of {student.hoursRequired} hours
-        toward graduation
+        You&apos;re {student.hoursLogged} of {hoursRequired} hours toward
+        graduation
       </h1>
       <p className="mt-3 max-w-md text-[15px] text-white/80">
         Just {remaining} more hours to go — log a shift or find a local event
-        this week. Gold: {student.brightFuturesGold} hrs · Silver:{" "}
-        {student.brightFuturesSilver} hrs.
+        this week.
+        {brightFutures
+          ? ` Gold: ${brightFutures.gold} hrs · Silver: ${brightFutures.silver} hrs.`
+          : null}
       </p>
 
       <div className="mt-7 flex items-center gap-3">
         <Link
-          href="/scan"
+          href="/log-hours"
           className="group flex items-center gap-3 rounded-pill bg-ink-button py-3 pl-6 pr-3 text-[15px] font-semibold transition hover:bg-black"
         >
           Log Hours

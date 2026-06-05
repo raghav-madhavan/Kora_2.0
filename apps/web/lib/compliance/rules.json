@@ -1,0 +1,19 @@
+{
+  "FL": {
+    "graduation": { "default": 40 },
+    "brightFutures": { "gold": 100, "silver": 75 },
+    "categories": {
+      "community": 15,
+      "environment": 15,
+      "education": 10
+    }
+  },
+  "WA": {
+    "graduation": { "default": 40 },
+    "categories": {
+      "community": 15,
+      "environment": 15,
+      "education": 10
+    }
+  }
+}

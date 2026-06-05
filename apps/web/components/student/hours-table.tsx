@@ -54,7 +54,7 @@ export function HoursTable() {
             </tr>
           </thead>
           <tbody>
-            {hoursLog.map((row) => {
+            {hoursLog.slice(0, 4).map((row) => {
               const tint = tints[row.categoryTint];
               const status = statusConfig[row.status];
               const StatusIcon = status.icon;

@@ -1,9 +1,15 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { ChevronLeft, ChevronRight, Heart, MapPin, Users } from "lucide-react";
-import { shifts, tints } from "@/lib/mock-data";
+import { rankShiftsForStudent } from "@/lib/matching";
+import { shifts, student, tints } from "@/lib/mock-data";
+
+function countSkillOverlap(studentSkills: string[], shiftSkills: string[]) {
+  return studentSkills.filter((s) => shiftSkills.includes(s)).length;
+}
 
 export function ShiftsCarousel() {
   const scroller = useRef<HTMLDivElement>(null);
@@ -11,7 +17,12 @@ export function ShiftsCarousel() {
     () => new Set(shifts.filter((e) => e.saved).map((e) => e.id)),
   );
 
-  const toggle = (id: number) =>
+  const rankedShifts = useMemo(
+    () => rankShiftsForStudent(student.skills, shifts).slice(0, 4),
+    [],
+  );
+
+  const toggle = (id: string) =>
     setSaved((prev) => {
       const next = new Set(prev);
       if (next.has(id)) {
@@ -29,7 +40,13 @@ export function ShiftsCarousel() {
     <section className="mb-9">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-[22px] font-bold">For You</h2>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          <Link
+            href="/events"
+            className="text-[14px] font-semibold text-primary hover:underline"
+          >
+            See all
+          </Link>
           <button
             type="button"
             onClick={() => scroll(-1)}
@@ -51,8 +68,9 @@ export function ShiftsCarousel() {
         ref={scroller}
         className="no-scrollbar flex gap-5 overflow-x-auto scroll-smooth pb-1"
       >
-        {shifts.map((e) => {
+        {rankedShifts.map((e) => {
           const tint = tints[e.categoryTint];
+          const overlap = countSkillOverlap(student.skills, e.skills);
           return (
             <article
               key={e.id}
@@ -83,11 +101,18 @@ export function ShiftsCarousel() {
               </div>
 
               <div className="flex flex-1 flex-col px-2 pb-2 pt-3">
-                <span
-                  className={`mb-2 inline-flex w-fit items-center rounded-pill px-3 py-1 text-[11px] font-semibold uppercase tracking-wide ${tint.bg} ${tint.fg}`}
-                >
-                  {e.category}
-                </span>
+                <div className="mb-2 flex flex-wrap items-center gap-2">
+                  <span
+                    className={`inline-flex w-fit items-center rounded-pill px-3 py-1 text-[11px] font-semibold uppercase tracking-wide ${tint.bg} ${tint.fg}`}
+                  >
+                    {e.category}
+                  </span>
+                  {e.matchScore > 0 ? (
+                    <span className="inline-flex w-fit items-center rounded-pill bg-accent-lavender px-3 py-1 text-[11px] font-semibold text-primary">
+                      {overlap}/{e.skills.length} skills match
+                    </span>
+                  ) : null}
+                </div>
                 <h3 className="text-[15px] font-bold leading-snug">
                   {e.title}
                 </h3>

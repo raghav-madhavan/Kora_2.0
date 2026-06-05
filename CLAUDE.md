@@ -47,6 +47,10 @@ Built by a high school founder with extreme founder-market fit.
 MVP — Student dashboard + QR sign-off flow + Org verification portal.
 Admin console is Phase 2. AI matching engine is Phase 3.
 
+**Student portal mock MVP is built** (2026-06-05). Resume in a new chat via
+[`docs/superpowers/checkpoints/CONTINUE.md`](docs/superpowers/checkpoints/CONTINUE.md).
+Full session log: [`docs/superpowers/checkpoints/2026-06-05-student-portal.md`](docs/superpowers/checkpoints/2026-06-05-student-portal.md).
+
 ## Model Usage
 Use extended thinking for:
 - System architecture decisions

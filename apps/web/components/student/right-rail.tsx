@@ -1,18 +1,22 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { MoreVertical, Plus, UserPlus, Check } from "lucide-react";
+import { getGraduationRequirement } from "@/lib/compliance";
 import { student, organizations } from "@/lib/mock-data";
 import { ProgressRing } from "./progress-ring";
 import { BarChart } from "./bar-chart";
 
 export function RightRail() {
+  const hoursRequired = getGraduationRequirement(student.schoolState);
+
   const [follows, setFollows] = useState(
     () =>
       new Set(organizations.filter((o) => o.following).map((o) => o.id)),
   );
 
-  const toggle = (id: number) =>
+  const toggle = (id: string) =>
     setFollows((prev) => {
       const next = new Set(prev);
       if (next.has(id)) {
@@ -43,8 +47,7 @@ export function RightRail() {
           </h3>
           <p className="mt-1 text-[13px] text-muted">
             {student.streakWeeks}-week streak —{" "}
-            {student.hoursRequired - student.hoursLogged} hours left to
-            graduate.
+            {hoursRequired - student.hoursLogged} hours left to graduate.
           </p>
         </div>
 
@@ -86,7 +89,7 @@ export function RightRail() {
                 />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[14px] font-bold">{o.name}</p>
-                  <p className="truncate text-[12px] text-muted">{o.role}</p>
+                  <p className="truncate text-[12px] text-muted">{o.distance}</p>
                 </div>
                 <button
                   type="button"
@@ -109,12 +112,12 @@ export function RightRail() {
           })}
         </div>
 
-        <button
-          type="button"
-          className="mt-4 w-full rounded-chip bg-accent-lavender py-3 text-[14px] font-semibold text-primary transition hover:bg-primary hover:text-white"
+        <Link
+          href="/organizations"
+          className="mt-4 block w-full rounded-chip bg-accent-lavender py-3 text-center text-[14px] font-semibold text-primary transition hover:bg-primary hover:text-white"
         >
           See All
-        </button>
+        </Link>
       </div>
     </aside>
   );

@@ -1,7 +1,16 @@
+import { getGraduationRequirement } from "@/lib/compliance";
 import { student } from "@/lib/mock-data";
 
-export function ProgressRing() {
-  const pct = Math.round((student.hoursLogged / student.hoursRequired) * 100);
+interface ProgressRingProps {
+  hoursLogged?: number;
+  hoursRequired?: number;
+}
+
+export function ProgressRing({
+  hoursLogged = student.hoursLogged,
+  hoursRequired = getGraduationRequirement(student.schoolState),
+}: ProgressRingProps) {
+  const pct = Math.round((hoursLogged / hoursRequired) * 100);
   const size = 150;
   const stroke = 8;
   const r = (size - stroke) / 2;
