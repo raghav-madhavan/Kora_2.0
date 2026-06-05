@@ -12,25 +12,18 @@ AI-matched platform for student community service hours.
 
 ## Directory Structure
 
-```
-kora/
-├── apps/
-│   ├── web/                  # Student + Org portal (Next.js 14)
-│   └── admin/                # School admin console (Next.js 14)
-├── packages/
-│   ├── ui/                   # Shared component library
-│   ├── db/                   # Prisma schema + migrations
-│   └── config/               # Shared ESLint, TS, Tailwind configs
-├── services/
-│   └── matching-engine/      # AI matching microservice (Python/FastAPI)
-├── docs/
-│   ├── architecture.md
-│   └── api-spec.md
-├── .cursor/rules
-├── CLAUDE.md
-├── turbo.json
-└── package.json
-```
+| Path | Description |
+|---|---|
+| [`apps/web`](./apps/web) | Student dashboard, org portal, QR sign-off flow |
+| [`apps/admin`](./apps/admin) | School admin compliance console |
+| [`packages/db`](./packages/db) | Prisma schema, client, all DB queries |
+| [`packages/ui`](./packages/ui) | Shared shadcn/ui component library |
+| [`packages/config`](./packages/config) | Shared TS, ESLint, Tailwind configs |
+| [`services/matching-engine`](./services/matching-engine) | Python FastAPI AI matching service |
+| [`docs/architecture.md`](./docs/architecture.md) | System design, auth flow, QR scheme |
+| [`CLAUDE.md`](./CLAUDE.md) | AI coding context for Claude Code |
+| [`.cursor/rules`](./.cursor/rules) | Cursor IDE coding rules |
+
 
 ## Tech Stack
 | Layer | Tech |
