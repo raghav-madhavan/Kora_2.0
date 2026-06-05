@@ -2,7 +2,8 @@
 
 import Image from "next/image";
 import { Heart, MapPin, Users } from "lucide-react";
-import { tints } from "@/lib/mock-data";
+import { ModeratorRow } from "@/components/student/moderator-row";
+import { getModeratorById, tints } from "@/lib/mock-data";
 import type { Shift } from "@/lib/types/student";
 
 interface ShiftCardProps {
@@ -26,6 +27,7 @@ export function ShiftCard({
 }: ShiftCardProps) {
   const tint = tints[shift.categoryTint];
   const canCommit = !isCommitted && shift.spotsLeft > 0;
+  const moderator = getModeratorById(shift.moderatorId);
 
   return (
     <article className="flex flex-col rounded-card bg-surface p-3 shadow-card">
@@ -79,6 +81,15 @@ export function ShiftCard({
             <Users size={14} /> {shift.spotsLeft} left
           </span>
         </div>
+
+        {moderator ? (
+          <div className="mt-3">
+            <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted">
+              Verifies your hours
+            </p>
+            <ModeratorRow moderator={moderator} compact />
+          </div>
+        ) : null}
 
         <button
           type="button"

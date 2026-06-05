@@ -1,7 +1,8 @@
 "use client";
 
 import { Check, ShieldCheck, UserPlus } from "lucide-react";
-import { tints } from "@/lib/mock-data";
+import { ModeratorRow } from "@/components/student/moderator-row";
+import { getModeratorById, tints } from "@/lib/mock-data";
 import type { Organization } from "@/lib/types/student";
 
 interface OrgCardProps {
@@ -11,6 +12,8 @@ interface OrgCardProps {
 }
 
 export function OrgCard({ org, isFollowing, onToggleFollow }: OrgCardProps) {
+  const moderator = getModeratorById(org.moderatorId);
+
   return (
     <article className="flex flex-col rounded-card bg-surface p-5 shadow-card">
       <div className="flex items-start gap-4">
@@ -60,6 +63,15 @@ export function OrgCard({ org, isFollowing, onToggleFollow }: OrgCardProps) {
         {org.upcomingShifts} upcoming shift
         {org.upcomingShifts === 1 ? "" : "s"}
       </p>
+
+      {moderator ? (
+        <div className="mt-4">
+          <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted">
+            Assigned moderator
+          </p>
+          <ModeratorRow moderator={moderator} />
+        </div>
+      ) : null}
 
       <button
         type="button"

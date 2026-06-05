@@ -7,12 +7,12 @@ function getSecret(): string {
   return process.env.QR_HMAC_SECRET ?? "dev-secret";
 }
 
-export function generateQrToken(
-  shiftLogId: string,
-  userId: string,
+/** Moderator-issued token bound to a shift session (not a student). */
+export function generateShiftQrToken(
+  shiftId: string,
+  issuedAt: number = Date.now(),
 ): { token: string; expiresAt: Date; issuedAt: number } {
-  const issuedAt = Date.now();
-  const payload = `${shiftLogId}:${userId}:${issuedAt}`;
+  const payload = `${shiftId}:${issuedAt}`;
   const sig = createHmac("sha256", getSecret())
     .update(payload)
     .digest("base64url");
@@ -24,10 +24,9 @@ export function generateQrToken(
   };
 }
 
-export function verifyQrToken(
+export function verifyShiftQrToken(
   token: string,
-  shiftLogId: string,
-  userId: string,
+  shiftId: string,
   issuedAt: number,
 ): boolean {
   if (!token.startsWith("kora.v1.")) {
@@ -38,7 +37,7 @@ export function verifyQrToken(
     return false;
   }
 
-  const payload = `${shiftLogId}:${userId}:${issuedAt}`;
+  const payload = `${shiftId}:${issuedAt}`;
   const expected = createHmac("sha256", getSecret())
     .update(payload)
     .digest("base64url");

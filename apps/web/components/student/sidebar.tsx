@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Settings, LogOut, Sparkles } from "lucide-react";
 import { SidebarNav } from "@/components/student/sidebar-nav";
-import { friends } from "@/lib/mock-data";
+import { SidebarMessagesSection } from "@/components/student/sidebar-messages-section";
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -24,23 +24,7 @@ export function Sidebar() {
       <SectionLabel>Overview</SectionLabel>
       <SidebarNav />
 
-      <SectionLabel>Friends</SectionLabel>
-      <div className="flex flex-col gap-3 px-1">
-        {friends.map((f) => (
-          <div key={f.id} className="flex items-center gap-3">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={f.avatar}
-              alt=""
-              className="h-9 w-9 rounded-full bg-accent-lavender object-cover"
-            />
-            <div className="min-w-0">
-              <p className="truncate text-[14px] font-semibold">{f.name}</p>
-              <p className="truncate text-[12px] text-muted">{f.role}</p>
-            </div>
-          </div>
-        ))}
-      </div>
+      <SidebarMessagesSection />
 
       <div className="mt-auto">
         <SectionLabel>Settings</SectionLabel>

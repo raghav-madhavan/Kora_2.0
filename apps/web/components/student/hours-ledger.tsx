@@ -1,14 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import {
   ArrowUpRight,
   BadgeCheck,
   Clock3,
   AlertTriangle,
-  QrCode,
 } from "lucide-react";
-import { hoursLog, tints } from "@/lib/mock-data";
+import { tints } from "@/lib/mock-data";
 import type { LogStatus, ShiftLog } from "@/lib/types/student";
 import {
   HoursFilters,
@@ -43,14 +41,6 @@ function parseDisplayDate(date: string): number {
   return new Date(date).getTime() || 0;
 }
 
-function isEligibleForQr(log: ShiftLog): boolean {
-  return (
-    log.status === "pending" &&
-    !log.qrToken &&
-    new Date(log.completedAt).getTime() < Date.now()
-  );
-}
-
 function sortLogs(logs: ShiftLog[], sort: SortOption): ShiftLog[] {
   const sorted = [...logs];
   if (sort === "most-hours") {
@@ -66,29 +56,29 @@ function sortLogs(logs: ShiftLog[], sort: SortOption): ShiftLog[] {
   );
 }
 
-export function HoursLedger() {
+export function HoursLedger({ logs }: { logs: ShiftLog[] }) {
   const [status, setStatus] = useState<StatusFilter>("all");
   const [category, setCategory] = useState<CategoryFilter>("all");
   const [sort, setSort] = useState<SortOption>("newest");
 
   const filteredLogs = useMemo(() => {
-    let logs = hoursLog;
+    let filtered = logs;
     if (status !== "all") {
-      logs = logs.filter((log) => log.status === status);
+      filtered = filtered.filter((log) => log.status === status);
     }
     if (category !== "all") {
-      logs = logs.filter((log) => log.categoryKey === category);
+      filtered = filtered.filter((log) => log.categoryKey === category);
     }
-    return sortLogs(logs, sort);
-  }, [status, category, sort]);
+    return sortLogs(filtered, sort);
+  }, [logs, status, category, sort]);
 
   const counts = useMemo(
     () => ({
-      verified: hoursLog.filter((l) => l.status === "verified").length,
-      pending: hoursLog.filter((l) => l.status === "pending").length,
-      flagged: hoursLog.filter((l) => l.status === "flagged").length,
+      verified: logs.filter((l) => l.status === "verified").length,
+      pending: logs.filter((l) => l.status === "pending").length,
+      flagged: logs.filter((l) => l.status === "flagged").length,
     }),
-    [],
+    [logs],
   );
 
   return (
@@ -169,22 +159,12 @@ export function HoursLedger() {
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    {isEligibleForQr(row) ? (
-                      <Link
-                        href={`/log-hours/${row.id}/qr`}
-                        className="inline-flex items-center gap-1.5 rounded-pill bg-primary px-3 py-1.5 text-[12px] font-semibold text-white transition hover:bg-primary-deep"
-                      >
-                        <QrCode size={14} />
-                        Get QR
-                      </Link>
-                    ) : (
-                      <button
-                        type="button"
-                        className="ml-auto grid h-9 w-9 place-items-center rounded-full border border-black/10 text-primary transition hover:bg-accent-lavender"
-                      >
-                        <ArrowUpRight size={17} strokeWidth={2.4} />
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      className="ml-auto grid h-9 w-9 place-items-center rounded-full border border-black/10 text-primary transition hover:bg-accent-lavender"
+                    >
+                      <ArrowUpRight size={17} strokeWidth={2.4} />
+                    </button>
                   </td>
                 </tr>
               );
@@ -230,15 +210,6 @@ export function HoursLedger() {
                   {statusInfo.label}
                 </span>
               </div>
-              {isEligibleForQr(row) ? (
-                <Link
-                  href={`/log-hours/${row.id}/qr`}
-                  className="mt-3 inline-flex items-center gap-1.5 rounded-pill bg-primary px-4 py-2 text-[13px] font-semibold text-white"
-                >
-                  <QrCode size={14} />
-                  Get QR
-                </Link>
-              ) : null}
             </div>
           );
         })}

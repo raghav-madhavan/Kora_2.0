@@ -1,9 +1,12 @@
 import type {
+  AppNotification,
   CategoryProgress,
   Friend,
   MonthlyHours,
+  OrgModerator,
   Organization,
   Shift,
+  ConversationThread,
   ShiftLog,
   StudentProfile,
   TintKey,
@@ -24,6 +27,95 @@ export const student: StudentProfile = {
   hoursLogged: 32,
   streakWeeks: 6,
 };
+
+export const orgModerators: OrgModerator[] = [
+  {
+    id: "mod_parks",
+    name: "Elena Vasquez",
+    avatar:
+      "https://api.dicebear.com/9.x/avataaars/svg?seed=Elena&backgroundColor=DDF0FB",
+    roleTitle: "Parks Volunteer Coordinator",
+    totalVerifications: 214,
+  },
+  {
+    id: "mod_hope",
+    name: "Marcus Webb",
+    avatar:
+      "https://api.dicebear.com/9.x/avataaars/svg?seed=Marcus&backgroundColor=ECEAFB",
+    roleTitle: "Kitchen Operations Lead",
+    totalVerifications: 387,
+  },
+  {
+    id: "mod_library",
+    name: "Priya Nair",
+    avatar:
+      "https://api.dicebear.com/9.x/avataaars/svg?seed=Priya&backgroundColor=FBE4F1",
+    roleTitle: "Youth Programs Director",
+    totalVerifications: 156,
+  },
+  {
+    id: "mod_maplewood",
+    name: "James Okonkwo",
+    avatar:
+      "https://api.dicebear.com/9.x/avataaars/svg?seed=James&backgroundColor=ECEAFB",
+    roleTitle: "Community Engagement Manager",
+    totalVerifications: 92,
+  },
+  {
+    id: "mod_habitat",
+    name: "Rachel Kim",
+    avatar:
+      "https://api.dicebear.com/9.x/avataaars/svg?seed=Rachel&backgroundColor=ECEAFB",
+    roleTitle: "Site Supervisor",
+    totalVerifications: 278,
+  },
+  {
+    id: "mod_green",
+    name: "Tomás Herrera",
+    avatar:
+      "https://api.dicebear.com/9.x/avataaars/svg?seed=Tomas&backgroundColor=DDF0FB",
+    roleTitle: "Garden Program Lead",
+    totalVerifications: 143,
+  },
+  {
+    id: "mod_paws",
+    name: "Avery Collins",
+    avatar:
+      "https://api.dicebear.com/9.x/avataaars/svg?seed=Avery&backgroundColor=ECEAFB",
+    roleTitle: "Shelter Volunteer Manager",
+    totalVerifications: 201,
+  },
+  {
+    id: "mod_youth",
+    name: "Danielle Brooks",
+    avatar:
+      "https://api.dicebear.com/9.x/avataaars/svg?seed=Danielle&backgroundColor=FBE4F1",
+    roleTitle: "Mentorship Coordinator",
+    totalVerifications: 118,
+  },
+];
+
+const moderatorById = new Map(orgModerators.map((m) => [m.id, m]));
+
+export const orgModeratorIds: Record<string, string> = {
+  org_habitat: "mod_habitat",
+  org_green_city: "mod_green",
+  org_lincoln_library: "mod_library",
+  org_hope_kitchen: "mod_hope",
+  org_city_parks: "mod_parks",
+  org_maplewood_senior: "mod_maplewood",
+  org_paws_hearts: "mod_paws",
+  org_youth_mentors: "mod_youth",
+};
+
+export function getModeratorById(id: string): OrgModerator | undefined {
+  return moderatorById.get(id);
+}
+
+export function getModeratorForOrg(orgId: string): OrgModerator | undefined {
+  const moderatorId = orgModeratorIds[orgId];
+  return moderatorId ? moderatorById.get(moderatorId) : undefined;
+}
 
 export const categories: CategoryProgress[] = [
   {
@@ -57,6 +149,7 @@ export const shifts: Shift[] = [
       "Help restore Riverside Park trails, remove invasive plants, and plant native trees.",
     org: "City Parks Dept.",
     orgId: "org_city_parks",
+    moderatorId: "mod_parks",
     category: "Environment",
     categoryKey: "environment",
     categoryTint: "sky",
@@ -77,6 +170,7 @@ export const shifts: Shift[] = [
       "Sort and pack food donations for families in need at Hope Community Kitchen.",
     org: "Hope Community Kitchen",
     orgId: "org_hope_kitchen",
+    moderatorId: "mod_hope",
     category: "Community",
     categoryKey: "community",
     categoryTint: "lavender",
@@ -97,6 +191,7 @@ export const shifts: Shift[] = [
       "Read aloud and help young students build literacy confidence.",
     org: "Lincoln Public Library",
     orgId: "org_lincoln_library",
+    moderatorId: "mod_library",
     category: "Education",
     categoryKey: "education",
     categoryTint: "pink",
@@ -117,6 +212,7 @@ export const shifts: Shift[] = [
       "Assist seniors with smartphones, tablets, and video calls with family.",
     org: "Maplewood Senior Center",
     orgId: "org_maplewood_senior",
+    moderatorId: "mod_maplewood",
     category: "Community",
     categoryKey: "community",
     categoryTint: "lavender",
@@ -137,6 +233,7 @@ export const shifts: Shift[] = [
       "Join a supervised construction crew building affordable housing units.",
     org: "Habitat for Humanity",
     orgId: "org_habitat",
+    moderatorId: "mod_habitat",
     category: "Community",
     categoryKey: "community",
     categoryTint: "lavender",
@@ -157,6 +254,7 @@ export const shifts: Shift[] = [
       "Plant vegetables and maintain raised beds at the Green City Coalition garden.",
     org: "Green City Coalition",
     orgId: "org_green_city",
+    moderatorId: "mod_green",
     category: "Environment",
     categoryKey: "environment",
     categoryTint: "sky",
@@ -177,6 +275,7 @@ export const shifts: Shift[] = [
       "Tutor middle school students in algebra and geometry prep sessions.",
     org: "Lincoln Public Library",
     orgId: "org_lincoln_library",
+    moderatorId: "mod_library",
     category: "Education",
     categoryKey: "education",
     categoryTint: "pink",
@@ -197,6 +296,7 @@ export const shifts: Shift[] = [
       "Walk dogs, socialize cats, and help with shelter cleaning and enrichment.",
     org: "Paws & Hearts Rescue",
     orgId: "org_paws_hearts",
+    moderatorId: "mod_paws",
     category: "Community",
     categoryKey: "community",
     categoryTint: "lavender",
@@ -511,6 +611,7 @@ export const organizations: Organization[] = [
       "https://api.dicebear.com/9.x/icons/svg?seed=Habitat&backgroundColor=ECEAFB",
     following: false,
     upcomingShifts: 2,
+    moderatorId: "mod_habitat",
   },
   {
     id: "org_green_city",
@@ -524,6 +625,7 @@ export const organizations: Organization[] = [
       "https://api.dicebear.com/9.x/icons/svg?seed=Green&backgroundColor=DDF0FB",
     following: false,
     upcomingShifts: 3,
+    moderatorId: "mod_green",
   },
   {
     id: "org_lincoln_library",
@@ -537,6 +639,7 @@ export const organizations: Organization[] = [
       "https://api.dicebear.com/9.x/icons/svg?seed=LibraryOrg&backgroundColor=FBE4F1",
     following: true,
     upcomingShifts: 4,
+    moderatorId: "mod_library",
   },
   {
     id: "org_hope_kitchen",
@@ -550,6 +653,7 @@ export const organizations: Organization[] = [
       "https://api.dicebear.com/9.x/icons/svg?seed=HopeOrg&backgroundColor=ECEAFB",
     following: false,
     upcomingShifts: 2,
+    moderatorId: "mod_hope",
   },
   {
     id: "org_city_parks",
@@ -563,6 +667,7 @@ export const organizations: Organization[] = [
       "https://api.dicebear.com/9.x/icons/svg?seed=ParksOrg&backgroundColor=DDF0FB",
     following: false,
     upcomingShifts: 1,
+    moderatorId: "mod_parks",
   },
   {
     id: "org_maplewood_senior",
@@ -576,6 +681,7 @@ export const organizations: Organization[] = [
       "https://api.dicebear.com/9.x/icons/svg?seed=SeniorOrg&backgroundColor=ECEAFB",
     following: false,
     upcomingShifts: 1,
+    moderatorId: "mod_maplewood",
   },
   {
     id: "org_paws_hearts",
@@ -589,6 +695,7 @@ export const organizations: Organization[] = [
       "https://api.dicebear.com/9.x/icons/svg?seed=PawsOrg&backgroundColor=ECEAFB",
     following: false,
     upcomingShifts: 2,
+    moderatorId: "mod_paws",
   },
   {
     id: "org_youth_mentors",
@@ -602,6 +709,7 @@ export const organizations: Organization[] = [
       "https://api.dicebear.com/9.x/icons/svg?seed=YouthOrg&backgroundColor=FBE4F1",
     following: false,
     upcomingShifts: 3,
+    moderatorId: "mod_youth",
   },
 ];
 
@@ -626,6 +734,213 @@ export const friends: Friend[] = [
     role: "29 hrs logged",
     avatar:
       "https://api.dicebear.com/9.x/avataaars/svg?seed=Devin&backgroundColor=ECEAFB",
+  },
+];
+
+export const messageTemplates = [
+  "I missed the QR scan, please manually verify my hours",
+  "I have a question about this shift",
+] as const;
+
+export const conversationThreads: ConversationThread[] = [
+  {
+    id: "thread_friend_jordan",
+    kind: "friend",
+    pinned: true,
+    unread: true,
+    contactId: "friend_jordan",
+    contactName: "Jordan Park",
+    contactAvatar:
+      "https://api.dicebear.com/9.x/avataaars/svg?seed=Jordan&backgroundColor=DDF0FB",
+    contactSubtitle: "38 hrs logged",
+    messages: [
+      {
+        id: "msg_jordan_1",
+        sender: "friend",
+        body: "Are you doing the food bank shift this weekend?",
+        sentAt: "2026-06-05T19:10:00.000Z",
+      },
+      {
+        id: "msg_jordan_2",
+        sender: "student",
+        body: "Yes — I committed yesterday!",
+        sentAt: "2026-06-05T19:24:00.000Z",
+      },
+      {
+        id: "msg_jordan_3",
+        sender: "friend",
+        body: "Nice, see you there!",
+        sentAt: "2026-06-05T20:01:00.000Z",
+      },
+    ],
+    updatedAt: "2026-06-05T20:01:00.000Z",
+  },
+  {
+    id: "thread_food_bank",
+    kind: "moderator",
+    pinned: true,
+    unread: false,
+    contactId: "mod_hope",
+    contactName: "Marcus Webb",
+    contactAvatar:
+      "https://api.dicebear.com/9.x/avataaars/svg?seed=Marcus&backgroundColor=ECEAFB",
+    contactSubtitle: "Kitchen Operations Lead",
+    shiftId: "shift_food_bank",
+    shiftTitle: "Weekend Food Bank Sorting Shift",
+    shiftDate: "Sun, Jun 8 · 1:00 PM",
+    messages: [
+      {
+        id: "msg_food_bank_1",
+        sender: "moderator",
+        body: "Thanks for committing to this shift. Check-in code will be displayed at the end.",
+        sentAt: "2026-06-05T14:10:00.000Z",
+      },
+      {
+        id: "msg_food_bank_2",
+        sender: "student",
+        body: "I missed the QR scan, please manually verify my hours",
+        sentAt: "2026-06-08T20:15:00.000Z",
+      },
+      {
+        id: "msg_food_bank_3",
+        sender: "moderator",
+        body: "Got it — I’ll review your check-in and update your hours shortly.",
+        sentAt: "2026-06-08T20:42:00.000Z",
+      },
+    ],
+    updatedAt: "2026-06-08T20:42:00.000Z",
+  },
+  {
+    id: "thread_friend_sofia",
+    kind: "friend",
+    pinned: false,
+    unread: true,
+    contactId: "friend_sofia",
+    contactName: "Sofia Reyes",
+    contactAvatar:
+      "https://api.dicebear.com/9.x/avataaars/svg?seed=Sofia&backgroundColor=FBE4F1",
+    contactSubtitle: "41 hrs logged",
+    messages: [
+      {
+        id: "msg_sofia_1",
+        sender: "friend",
+        body: "Did you finish your Bright Futures paperwork yet?",
+        sentAt: "2026-06-04T15:30:00.000Z",
+      },
+    ],
+    updatedAt: "2026-06-04T15:30:00.000Z",
+  },
+  {
+    id: "thread_reading_buddies",
+    kind: "moderator",
+    pinned: false,
+    unread: true,
+    contactId: "mod_library",
+    contactName: "Priya Nair",
+    contactAvatar:
+      "https://api.dicebear.com/9.x/avataaars/svg?seed=Priya&backgroundColor=FBE4F1",
+    contactSubtitle: "Youth Programs Director",
+    shiftId: "shift_reading_buddies",
+    shiftTitle: "After-School Reading Buddies (Grades 1–3)",
+    shiftDate: "Mon, Jun 9 · 3:30 PM",
+    messages: [
+      {
+        id: "msg_reading_1",
+        sender: "student",
+        body: "I have a question about this shift",
+        sentAt: "2026-06-07T16:05:00.000Z",
+      },
+      {
+        id: "msg_reading_2",
+        sender: "moderator",
+        body: "Happy to help — what would you like to know?",
+        sentAt: "2026-06-07T16:18:00.000Z",
+      },
+      {
+        id: "msg_reading_3",
+        sender: "student",
+        body: "Do I need to bring anything for the reading session?",
+        sentAt: "2026-06-07T16:22:00.000Z",
+      },
+      {
+        id: "msg_reading_4",
+        sender: "moderator",
+        body: "Just yourself. We provide all books and materials at the front desk.",
+        sentAt: "2026-06-07T16:30:00.000Z",
+      },
+    ],
+    updatedAt: "2026-06-07T16:30:00.000Z",
+  },
+  {
+    id: "thread_riverside_cleanup",
+    kind: "moderator",
+    pinned: false,
+    unread: true,
+    contactId: "mod_parks",
+    contactName: "Elena Vasquez",
+    contactAvatar:
+      "https://api.dicebear.com/9.x/avataaars/svg?seed=Elena&backgroundColor=DDF0FB",
+    contactSubtitle: "Parks Volunteer Coordinator",
+    shiftId: "shift_riverside_cleanup",
+    shiftTitle: "Riverside Park Cleanup & Tree Planting",
+    shiftDate: "Sat, Jun 7 · 9:00 AM",
+    messages: [
+      {
+        id: "msg_parks_1",
+        sender: "moderator",
+        body: "Reminder: wear closed-toe shoes and bring a water bottle.",
+        sentAt: "2026-06-06T18:00:00.000Z",
+      },
+    ],
+    updatedAt: "2026-06-06T18:00:00.000Z",
+  },
+];
+
+export const appNotifications: AppNotification[] = [
+  {
+    id: "notif_hours_hope_jun8",
+    kind: "hours_verified",
+    title: "Hours verified",
+    body: "Marcus Webb approved 3 hrs for Weekend Food Bank Sorting Shift at Hope Community Kitchen.",
+    read: false,
+    createdAt: "2026-06-08T21:05:00.000Z",
+    href: "/hours",
+  },
+  {
+    id: "notif_motivation_bright_futures",
+    kind: "motivation",
+    title: "Bright Futures progress",
+    body: "You're so close to Bright Futures Silver — 43 hours to go. Keep it up!",
+    read: false,
+    createdAt: "2026-06-07T09:00:00.000Z",
+    href: "/goals",
+  },
+  {
+    id: "notif_hours_parks_may24",
+    kind: "hours_verified",
+    title: "Hours verified",
+    body: "Elena Vasquez approved 3 hrs for Riverside Park Cleanup at City Parks Dept.",
+    read: true,
+    createdAt: "2026-05-24T16:00:00.000Z",
+    href: "/hours",
+  },
+  {
+    id: "notif_motivation_graduation",
+    kind: "motivation",
+    title: "Graduation requirement",
+    body: "You're so close to your graduation service requirement — just 8 hours to go!",
+    read: false,
+    createdAt: "2026-06-05T08:30:00.000Z",
+    href: "/goals",
+  },
+  {
+    id: "notif_milestone_streak",
+    kind: "milestone",
+    title: "6-week streak",
+    body: "Nice work — you've logged service hours 6 weeks in a row. Don't break the chain!",
+    read: true,
+    createdAt: "2026-06-03T12:00:00.000Z",
+    href: "/",
   },
 ];
 

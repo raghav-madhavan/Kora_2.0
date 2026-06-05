@@ -4,8 +4,9 @@ import { useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Heart, MapPin, Users } from "lucide-react";
+import { ModeratorRow } from "@/components/student/moderator-row";
 import { rankShiftsForStudent } from "@/lib/matching";
-import { shifts, student, tints } from "@/lib/mock-data";
+import { getModeratorById, shifts, student, tints } from "@/lib/mock-data";
 
 function countSkillOverlap(studentSkills: string[], shiftSkills: string[]) {
   return studentSkills.filter((s) => shiftSkills.includes(s)).length;
@@ -71,6 +72,7 @@ export function ShiftsCarousel() {
         {rankedShifts.map((e) => {
           const tint = tints[e.categoryTint];
           const overlap = countSkillOverlap(student.skills, e.skills);
+          const moderator = getModeratorById(e.moderatorId);
           return (
             <article
               key={e.id}
@@ -126,6 +128,15 @@ export function ShiftsCarousel() {
                     <Users size={14} /> {e.spotsLeft} left
                   </span>
                 </div>
+
+                {moderator ? (
+                  <div className="mt-3">
+                    <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted">
+                      Verifies your hours
+                    </p>
+                    <ModeratorRow moderator={moderator} compact />
+                  </div>
+                ) : null}
               </div>
             </article>
           );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { syncCommittedShift } from "@/app/(student)/scan/actions";
 import {
   committedShifts as seedCommittedShifts,
   organizations as seedOrganizations,
@@ -88,6 +89,7 @@ export function useMockStore() {
           [shiftId]: spotsLeft - 1,
         },
       });
+      void syncCommittedShift(shiftId);
       return true;
     },
     [persist, state],
