@@ -1,25 +1,21 @@
 {
-  "$schema": "https://turbo.build/schema.json",
-  "globalDependencies": [".env.local"],
-  "pipeline": {
-    "build": {
-      "dependsOn": ["^build"],
-      "outputs": [".next/**", "dist/**"]
-    },
-    "dev": {
-      "cache": false,
-      "persistent": true
-    },
-    "lint": {},
-    "type-check": {
-      "dependsOn": ["^build"]
-    },
-    "db:push": {
-      "cache": false
-    },
-    "db:studio": {
-      "cache": false,
-      "persistent": true
-    }
+  "name": "kora",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "services/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "type-check": "turbo run type-check",
+    "db:push": "turbo run db:push --filter=@kora/db",
+    "db:studio": "turbo run db:studio --filter=@kora/db"
+  },
+  "devDependencies": {
+    "turbo": "latest",
+    "typescript": "^5.0.0"
   }
 }
