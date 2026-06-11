@@ -39,7 +39,7 @@ AI-matched platform for student community service hours.
 ## Getting Started
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/kora
+git clone https://github.com/VGGladiator/Kora_2.0.git
 cd kora
 npm install
 cp .env.example .env.local
