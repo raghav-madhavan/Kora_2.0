@@ -1,5 +1,4 @@
 # Kora
-> The API-first, AI-routed system of record for high school community service.
 
 ## What is Kora?
 Kora replaces forged paper signatures and legacy software (x2VOL) with a verified,
