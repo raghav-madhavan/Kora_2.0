@@ -35,6 +35,9 @@ if [ ${#missing[@]} -gt 0 ]; then
   exit 1
 fi
 
+echo "==> Syncing database env to packages/db/.env"
+grep -E '^(DATABASE_URL|DIRECT_URL)=' .env.local > packages/db/.env
+
 echo "==> Installing dependencies"
 npm install
 

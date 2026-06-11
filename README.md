@@ -67,7 +67,7 @@ services/matching-engine → Python FastAPI AI matching
 ## Roadmap
 - [ ] MVP: Student dashboard + QR sign-off
 - [ ] Organization portal + shift builder
-- [ ] Admin console + PowerSchool export
+- [x] Admin console + PowerSchool export (backend + UI)
 - [ ] AI matching engine
 - [ ] Multi-state compliance rules engine (FL Bright Futures, WA graduation)
 
