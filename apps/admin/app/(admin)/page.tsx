@@ -1,16 +1,9 @@
+import { AdminForbidden } from "@/components/admin-forbidden";
+import { isForbiddenError } from "@/lib/is-forbidden-error";
 import { createServerCaller } from "@/lib/trpc/server";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
-
-function isForbiddenError(error: unknown): boolean {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    error.code === "FORBIDDEN"
-  );
-}
 
 function StatCard({
   label,
@@ -69,53 +62,47 @@ export default async function AdminDashboardPage() {
           />
         </div>
 
-        <div className="rounded-xl border border-black/10 bg-[var(--color-surface)] p-6">
-          <h3 className="font-semibold text-[var(--color-ink)]">API endpoints</h3>
-          <p className="mt-2 text-sm text-[var(--color-muted)]">
-            These read-only procedures are available via tRPC at{" "}
-            <code className="rounded bg-black/5 px-1">/api/trpc</code>:
-          </p>
-          <ul className="mt-4 list-inside list-disc space-y-1 text-sm text-[var(--color-ink)]">
-            <li>
-              <code>school.getComplianceMasterList</code>
-            </li>
-            <li>
-              <code>school.getStudentHours</code>
-            </li>
-            <li>
-              <code>fraud.listFlags</code>
-            </li>
-            <li>
-              <code>export.powerSchool</code>
-            </li>
-          </ul>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <Link
+            href="/compliance"
+            className="rounded-xl border border-black/10 bg-[var(--color-surface)] p-6 hover:border-[var(--color-primary)]/40"
+          >
+            <h3 className="font-semibold text-[var(--color-ink)]">
+              Compliance master list
+            </h3>
+            <p className="mt-2 text-sm text-[var(--color-muted)]">
+              View all students, verified hours, and graduation progress.
+            </p>
+          </Link>
+          <Link
+            href="/fraud"
+            className="rounded-xl border border-black/10 bg-[var(--color-surface)] p-6 hover:border-[var(--color-danger)]/40"
+          >
+            <h3 className="font-semibold text-[var(--color-ink)]">
+              Fraud review
+            </h3>
+            <p className="mt-2 text-sm text-[var(--color-muted)]">
+              {overview.openFraudFlags > 0
+                ? `${overview.openFraudFlags} flag(s) need review`
+                : "No open flags"}
+            </p>
+          </Link>
+          <Link
+            href="/export"
+            className="rounded-xl border border-black/10 bg-[var(--color-surface)] p-6 hover:border-[var(--color-primary)]/40"
+          >
+            <h3 className="font-semibold text-[var(--color-ink)]">
+              PowerSchool export
+            </h3>
+            <p className="mt-2 text-sm text-[var(--color-muted)]">
+              Download verified hours as CSV.
+            </p>
+          </Link>
         </div>
       </div>
     );
   } catch (error) {
-    if (isForbiddenError(error)) {
-      return (
-        <div className="rounded-xl border border-[var(--color-danger)]/30 bg-[var(--color-surface)] p-8">
-          <h2 className="text-xl font-semibold text-[var(--color-ink)]">
-            Admin access required
-          </h2>
-          <p className="mt-2 text-[var(--color-muted)]">
-            Your account is signed in but does not have the{" "}
-            <code className="rounded bg-black/5 px-1">SCHOOL_ADMIN</code> role.
-            Set{" "}
-            <code className="rounded bg-black/5 px-1">SEED_ADMIN_EMAIL</code> in{" "}
-            <code className="rounded bg-black/5 px-1">.env.local</code> to your
-            Clerk email, then sign in again.
-          </p>
-          <Link
-            href="/sign-in"
-            className="mt-4 inline-block text-sm font-medium text-[var(--color-primary-deep)]"
-          >
-            Sign in with a different account
-          </Link>
-        </div>
-      );
-    }
+    if (isForbiddenError(error)) return <AdminForbidden />;
     throw error;
   }
 }

@@ -43,8 +43,18 @@ git clone https://github.com/VGGladiator/Kora_2.0.git
 cd kora
 npm install
 cp .env.example .env.local
-npm run dev
+# Fill in Supabase + Clerk keys in .env.local
+npm run dev          # student portal :3000 + admin :3001
 ```
+
+### Admin console (first time)
+
+```bash
+# Set SEED_ADMIN_EMAIL in .env.local to your Clerk email
+npm run setup:admin  # db:push + seed demo school data
+```
+
+Sign in at [http://localhost:3001](http://localhost:3001). See [`apps/admin/README.md`](./apps/admin/README.md).
 
 ## Monorepo Structure
 apps/web         → Student + Org portal

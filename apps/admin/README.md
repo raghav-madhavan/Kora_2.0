@@ -2,22 +2,21 @@
 
 School admin compliance console (`SCHOOL_ADMIN` role). Runs on port **3001**.
 
-## Setup
+## One-command setup
 
-1. Copy env vars from the monorepo root `.env.example` into `.env.local`.
-2. Set `DATABASE_URL`, `DIRECT_URL`, Clerk keys, and `SEED_ADMIN_EMAIL` (your Clerk email).
-3. From the repo root:
+From the monorepo root:
 
 ```bash
-npm install
-npm run db:push
-npm run db:seed
-npm run dev
+cp .env.example .env.local
+# Edit .env.local — set Supabase URLs, Clerk keys, SEED_ADMIN_EMAIL
+
+npm run setup:admin   # install + db:push + db:seed
+npm run dev           # admin on :3001
 ```
 
-4. Open [http://localhost:3001](http://localhost:3001), sign in with Clerk.
+Open [http://localhost:3001](http://localhost:3001) and sign in with the email matching `SEED_ADMIN_EMAIL`.
 
-On first sign-in, `SEED_ADMIN_EMAIL` is promoted to `SCHOOL_ADMIN` and linked to the seeded Lincoln High School.
+On first sign-in you are promoted to `SCHOOL_ADMIN` and linked to the seeded Lincoln High School.
 
 ## tRPC procedures
 

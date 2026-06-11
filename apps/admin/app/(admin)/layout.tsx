@@ -1,3 +1,4 @@
+import { AdminNav } from "@/components/admin-nav";
 import { UserButton } from "@clerk/nextjs";
 
 export default function AdminLayout({
@@ -8,7 +9,7 @@ export default function AdminLayout({
   return (
     <div className="min-h-screen">
       <header className="border-b border-black/10 bg-[var(--color-surface)] px-6 py-4">
-        <div className="mx-auto flex max-w-6xl items-center justify-between">
+        <div className="mx-auto flex max-w-6xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm font-medium text-[var(--color-muted)]">
               Kora Admin
@@ -17,7 +18,10 @@ export default function AdminLayout({
               School Compliance Console
             </h1>
           </div>
-          <UserButton />
+          <div className="flex items-center gap-4">
+            <AdminNav />
+            <UserButton />
+          </div>
         </div>
       </header>
       <main className="mx-auto max-w-6xl px-6 py-8">{children}</main>
