@@ -12,6 +12,7 @@
     "lint": "turbo run lint",
     "type-check": "turbo run type-check",
     "db:push": "turbo run db:push --filter=@kora/db",
+    "db:seed": "turbo run db:seed --filter=@kora/db",
     "db:studio": "turbo run db:studio --filter=@kora/db"
   },
   "devDependencies": {
