@@ -1,36 +1,48 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/create-next-app).
+# Kora — School Admin Console (`apps/admin`)
 
-## Getting Started
+Next.js 16 App Router app for **school administrators** — FERPA-scoped compliance views, fraud review, and PowerSchool export.
 
-First, run the development server:
+Runs on port **3001**. Part of the [Kora monorepo](../../README.md).
+
+## Status
+
+**Phase 2 — scaffold only.** The app boots and builds, but compliance dashboards, fraud flags, and export flows are not implemented yet. Active MVP work lives in [`apps/web`](../web).
+
+## Planned scope
+
+- Read-only compliance master-list scoped to `schoolId`
+- Fraud detection surfacing (3+ identical unverified hours within 10 min)
+- PowerSchool / SIS export
+- Clerk role guard: `SCHOOL_ADMIN` only
+
+## Development
+
+From the repo root:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run dev:all      # starts web (:3000) and admin (:3001)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+From this directory:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run dev          # next dev --port 3001
+npm run build
+npm run check-types
+npm run lint
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load Inter, a custom Google Font.
+Open [http://localhost:3001](http://localhost:3001).
 
-## Learn More
+## Environment
 
-To learn more about Next.js, take a look at the following resources:
+Uses the shared [`.env.example`](../../.env.example) at the repo root. Admin-specific URL:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+NEXT_PUBLIC_ADMIN_URL=http://localhost:3001
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Related docs
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- [Architecture](../../docs/architecture.md)
+- [Project context](../../CLAUDE.md)

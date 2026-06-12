@@ -1,36 +1,83 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/create-next-app).
+# Kora — Student & Org Portal (`apps/web`)
 
-## Getting Started
+Next.js 16 App Router app hosting both the **student dashboard** and the **organization moderator portal**. Runs on port **3000**.
 
-First, run the development server:
+Part of the [Kora monorepo](../../README.md).
+
+## What lives here
+
+| Area | Route group | Base path | Description |
+|---|---|---|---|
+| Student portal | `(student)` | `/` | Dashboard, events, hours, goals, profile |
+| Org moderator portal | `(moderator)` | `/moderator` | Verifications, shifts, QR check-in |
+| Mock auth | — | `/login` | Persona picker (swap target for Clerk) |
+
+### Student routes
+
+| Route | Purpose |
+|---|---|
+| `/` | Dashboard — matched shifts, progress, quick actions |
+| `/events` | Browse and commit to volunteer shifts |
+| `/schedule` | Committed shifts |
+| `/hours` | Hours ledger |
+| `/goals` | Graduation / Bright Futures progress |
+| `/organizations` | Partner org directory |
+| `/log-hours` | Manual hour claims |
+| `/log-hours/[shiftLogId]/qr` | QR display for org verification |
+| `/profile` | Student profile and skills |
+
+### Moderator routes
+
+| Route | Purpose |
+|---|---|
+| `/moderator` | Org dashboard — pending verifications, upcoming shifts |
+| `/moderator/verifications` | Approve / reject / review flagged logs |
+| `/moderator/shifts` | Shift list |
+| `/moderator/shifts/[shiftId]` | Rotating QR display (15-min HMAC tokens) |
+
+## Architecture notes
+
+- **Mock data layer** — `lib/mock-data.ts`, `lib/mock-store.ts` (client), `lib/mock-store-server.ts` (server QR sessions). Real tRPC + Prisma wiring is planned; do not bypass this layer with raw Prisma in app code.
+- **Compliance rules** — `lib/compliance/` — state-specific thresholds (FL Bright Futures, WA graduation). Never hardcode hour limits in UI.
+- **QR tokens** — `lib/qr-token.ts` (server-only HMAC). Requires `QR_HMAC_SECRET` in env.
+- **Auth** — `lib/auth/session.ts` + `proxy.ts` coarse routing. Mock sessions use the `kora_session` cookie; internals swap for Clerk without changing guards.
+- **Matching** — `lib/matching.ts` — skill-tag overlap for the "For You" feed until the AI engine ships.
+
+## Development
+
+From the repo root:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run dev          # turbo → apps/web only
+npm run dev:all      # web + admin
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+From this directory:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run dev          # next dev --port 3000
+npm run build
+npm run check-types
+npm run lint
+npm run test         # vitest
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load Inter, a custom Google Font.
+Verify before merging:
 
-## Learn More
+```bash
+npm run check-types && npm run lint && npm run build
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Environment
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Copy [`.env.example`](../../.env.example) to the repo root as `.env.local`. Required for QR flow:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+QR_HMAC_SECRET=change_this_to_a_random_64_char_string
+```
 
-## Deploy on Vercel
+## Related docs
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- [Architecture](../../docs/architecture.md)
+- [Session checkpoints](../../docs/superpowers/checkpoints/CONTINUE.md)
+- [Org access levels spec](../../docs/superpowers/specs/2026-06-12-org-portal-access-levels-design.md)

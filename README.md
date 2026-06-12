@@ -1,64 +1,81 @@
 # Kora
 
-## What is Kora?
-Kora replaces forged paper signatures and legacy software (x2VOL) with a verified,
-AI-matched platform for student community service hours.
+Verified community service hours for high schools — AI-matched shifts, QR sign-off, and FERPA-compliant compliance reporting.
 
-**Three portals. One source of truth.**
-- **Student Dashboard** — AI-matched shifts, QR-verified sign-off, hours ledger
-- **Organization Portal** — Shift builder, automated verification, waiver gating
-- **Admin Console** — FERPA-compliant compliance master-list, fraud detection, PowerSchool export
+Kora replaces forged paper signatures and legacy software (x2VOL) with a single source of truth across three portals.
 
-## Directory Structure
+## Portals
+
+| Portal | App | Port | Status |
+|---|---|---|---|
+| **Student + Org** | [`apps/web`](./apps/web) | 3000 | MVP on mock data layer |
+| **School Admin** | [`apps/admin`](./apps/admin) | 3001 | Phase 2 scaffold |
+
+- **Student Dashboard** — AI-matched shifts, QR-verified sign-off, hours ledger, graduation goals
+- **Organization Portal** — Shift management, verification queue, rotating QR check-in
+- **Admin Console** — FERPA-compliant compliance master-list, fraud detection, PowerSchool export (planned)
+
+## Monorepo layout
 
 | Path | Description |
 |---|---|
-| [`apps/web`](./apps/web) | Student dashboard, org portal, QR sign-off flow |
-| [`apps/admin`](./apps/admin) | School admin compliance console |
-| [`packages/db`](./packages/db) | Prisma schema, client, all DB queries |
-| [`packages/ui`](./packages/ui) | Shared shadcn/ui component library |
-| [`packages/config`](./packages/config) | Shared TS, ESLint, Tailwind configs |
-| [`services/matching-engine`](./services/matching-engine) | Python FastAPI AI matching service |
+| [`apps/web`](./apps/web) | Student dashboard, org moderator portal, mock auth (`/login`) |
+| [`apps/admin`](./apps/admin) | School admin compliance console (Phase 2) |
+| [`packages/db`](./packages/db) | Prisma schema — single source of truth for data model |
+| [`packages/ui`](./packages/ui) | Shared component library (`@kora/ui`) |
+| [`packages/eslint-config`](./packages/eslint-config) | Shared ESLint configs (`@repo/eslint-config`) |
+| [`packages/typescript-config`](./packages/typescript-config) | Shared TypeScript configs (`@repo/typescript-config`) |
+| [`services/matching-engine`](./services/matching-engine) | Python FastAPI AI matching service (Phase 3) |
 | [`docs/architecture.md`](./docs/architecture.md) | System design, auth flow, QR scheme |
-| [`CLAUDE.md`](./CLAUDE.md) | AI coding context for Claude Code |
-| [`.cursor/rules`](./.cursor/rules) | Cursor IDE coding rules |
+| [`CLAUDE.md`](./CLAUDE.md) | AI coding context for Claude Code / Cursor |
 
+## Tech stack
 
-## Tech Stack
 | Layer | Tech |
 |---|---|
-| Frontend | Next.js 14, Tailwind CSS, shadcn/ui |
-| Backend | tRPC, Prisma |
+| Frontend | Next.js 16, React 19, Tailwind CSS 4 |
+| Backend | tRPC (planned), Prisma |
 | Database | PostgreSQL (Supabase) |
-| Auth | Clerk |
-| AI Matching | Python, FastAPI, OpenAI embeddings |
+| Auth | Mock session cookie today → Clerk (planned) |
+| AI Matching | Python, FastAPI, OpenAI embeddings (Phase 3) |
 | QR Verification | HMAC-signed tokens |
 | Infra | Vercel (web), Railway (services) |
 
-## Getting Started
+## Getting started
 
 ```bash
 git clone https://github.com/VGGladiator/Kora_2.0.git
-cd kora
+cd Kora_2.0
 npm install
-cp .env.example .env.local
-npm run dev
+cp .env.example .env.local   # fill in secrets
+npm run dev                  # starts apps/web on :3000
 ```
 
-## Monorepo Structure
-apps/web         → Student + Org portal
-apps/admin       → School admin console
-packages/db      → Prisma schema + all DB queries
-packages/ui      → Shared component library
-packages/config  → Shared ESLint, TS, Tailwind configs
-services/matching-engine → Python FastAPI AI matching
+Other commands:
+
+```bash
+npm run dev:all      # web (:3000) + admin (:3001)
+npm run build        # full monorepo build
+npm run lint         # lint all packages
+npm run type-check   # type-check all packages
+npm run db:push      # push Prisma schema (when @kora/db is wired)
+npm run db:studio    # Prisma Studio
+```
+
+Open [http://localhost:3000/login](http://localhost:3000/login) to pick a mock persona (student or org moderator).
 
 ## Roadmap
-- [ ] MVP: Student dashboard + QR sign-off
-- [ ] Organization portal + shift builder
+
+- [x] Student portal MVP (mock layer) — dashboard, events, hours, goals, QR flow
+- [x] Org moderator portal MVP (mock layer) — verifications, shifts, QR display
+- [ ] Org portal macro/micro access levels + mock auth guards
+- [ ] Clerk auth + tRPC + `packages/db` wiring
 - [ ] Admin console + PowerSchool export
-- [ ] AI matching engine
+- [ ] AI matching engine (`services/matching-engine`)
 - [ ] Multi-state compliance rules engine (FL Bright Futures, WA graduation)
 
 ## Status
-🚧 Pre-launch — Tampa, FL beta targeting robotics teams + FBLA chapters
+
+Pre-launch — Tampa, FL beta targeting robotics teams and FBLA chapters.
+
+Resume development from [`docs/superpowers/checkpoints/CONTINUE.md`](./docs/superpowers/checkpoints/CONTINUE.md).
