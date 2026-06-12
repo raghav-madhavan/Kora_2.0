@@ -9,6 +9,8 @@ import {
   User,
   X,
 } from "lucide-react";
+import { useModeratorSession } from "@/components/moderator/session-provider";
+import { filterModeratorNav } from "@/lib/auth/policy";
 
 const moreItems = [
   { icon: CalendarDays, label: "Shifts", href: "/moderator/shifts" },
@@ -23,6 +25,8 @@ interface MobileMoreSheetProps {
 }
 
 export function MobileMoreSheet({ open, onClose }: MobileMoreSheetProps) {
+  const { session } = useModeratorSession();
+
   useEffect(() => {
     if (!open) return;
     const handler = (e: KeyboardEvent) => {
@@ -54,7 +58,7 @@ export function MobileMoreSheet({ open, onClose }: MobileMoreSheetProps) {
           </button>
         </div>
         <nav className="flex flex-col gap-1">
-          {moreItems.map(({ icon: Icon, label, href }) => (
+          {filterModeratorNav(session, moreItems).map(({ icon: Icon, label, href }) => (
             <Link
               key={href}
               href={href}

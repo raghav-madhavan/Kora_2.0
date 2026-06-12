@@ -12,22 +12,13 @@ import {
 } from "lucide-react";
 import { MobileMoreSheet } from "@/components/moderator/mobile-more-sheet";
 import { useOrgLogs } from "@/components/moderator/org-logs-provider";
+import { useModeratorSession } from "@/components/moderator/session-provider";
+import { isModeratorPathAllowed } from "@/lib/auth/policy";
 import { hasUnreadOrgMessages } from "@/lib/moderator-messages";
 import { useModeratorMessagesStore } from "@/lib/mock-messages-store-moderator";
-import { moderatorShifts } from "@/lib/mock-data-moderator";
 
-const nextUpcomingShift = [...moderatorShifts]
-  .filter((shift) => shift.status === "upcoming")
-  .sort(
-    (a, b) =>
-      new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime(),
-  )[0];
-
-const showQrHref = nextUpcomingShift
-  ? `/moderator/shifts/${nextUpcomingShift.id}`
-  : "/moderator/shifts";
-
-export function MobileNav() {
+export function MobileNav({ qrHref }: { qrHref: string }) {
+  const { session } = useModeratorSession();
   const pathname = usePathname();
   const { pendingCount } = useOrgLogs();
   const { threads } = useModeratorMessagesStore();
@@ -38,18 +29,20 @@ export function MobileNav() {
     <>
       <nav className="fixed bottom-0 left-0 right-0 z-30 border-t border-black/5 bg-surface/95 backdrop-blur lg:hidden">
         <div className="mx-auto flex max-w-shell items-center justify-around px-2 pb-[env(safe-area-inset-bottom)] pt-2">
-          <Link
-            href="/moderator"
-            className={`flex min-w-[56px] flex-col items-center gap-1 rounded-chip px-2 py-1.5 text-[10px] font-semibold transition ${
-              pathname === "/moderator" ? "text-primary" : "text-muted"
-            }`}
-          >
-            <CircleGauge
-              size={20}
-              strokeWidth={pathname === "/moderator" ? 2.4 : 2}
-            />
-            Home
-          </Link>
+          {isModeratorPathAllowed(session, "/moderator") ? (
+            <Link
+              href="/moderator"
+              className={`flex min-w-[56px] flex-col items-center gap-1 rounded-chip px-2 py-1.5 text-[10px] font-semibold transition ${
+                pathname === "/moderator" ? "text-primary" : "text-muted"
+              }`}
+            >
+              <CircleGauge
+                size={20}
+                strokeWidth={pathname === "/moderator" ? 2.4 : 2}
+              />
+              Home
+            </Link>
+          ) : null}
 
           <Link
             href="/moderator/verifications"
@@ -80,14 +73,14 @@ export function MobileNav() {
           </Link>
 
           <Link
-            href={showQrHref}
+            href={qrHref}
             className={`-mt-4 flex min-w-[56px] flex-col items-center gap-1 text-[10px] font-semibold transition ${
-              pathname.startsWith(showQrHref) ? "text-primary" : "text-muted"
+              pathname.startsWith(qrHref) ? "text-primary" : "text-muted"
             }`}
           >
             <span
               className={`grid h-14 w-14 place-items-center rounded-full shadow-raised transition active:scale-[0.97] ${
-                pathname.startsWith(showQrHref)
+                pathname.startsWith(qrHref)
                   ? "bg-primary"
                   : "bg-panel hover:bg-primary-deep"
               }`}
@@ -97,30 +90,32 @@ export function MobileNav() {
             Show QR
           </Link>
 
-          <Link
-            href="/moderator/messages"
-            className={`relative flex min-w-[56px] flex-col items-center gap-1 rounded-chip px-2 py-1.5 text-[10px] font-semibold transition ${
-              pathname.startsWith("/moderator/messages")
-                ? "text-primary"
-                : "text-muted"
-            }`}
-          >
-            <span className="relative">
-              <MessageSquare
-                size={20}
-                strokeWidth={
-                  pathname.startsWith("/moderator/messages") ? 2.4 : 2
-                }
-              />
-              {unreadMessages ? (
-                <span
-                  className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-primary ring-2 ring-surface"
-                  aria-hidden
+          {isModeratorPathAllowed(session, "/moderator/messages") ? (
+            <Link
+              href="/moderator/messages"
+              className={`relative flex min-w-[56px] flex-col items-center gap-1 rounded-chip px-2 py-1.5 text-[10px] font-semibold transition ${
+                pathname.startsWith("/moderator/messages")
+                  ? "text-primary"
+                  : "text-muted"
+              }`}
+            >
+              <span className="relative">
+                <MessageSquare
+                  size={20}
+                  strokeWidth={
+                    pathname.startsWith("/moderator/messages") ? 2.4 : 2
+                  }
                 />
-              ) : null}
-            </span>
-            Messages
-          </Link>
+                {unreadMessages ? (
+                  <span
+                    className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-primary ring-2 ring-surface"
+                    aria-hidden
+                  />
+                ) : null}
+              </span>
+              Messages
+            </Link>
+          ) : null}
 
           <button
             type="button"

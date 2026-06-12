@@ -9,6 +9,8 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { useOrgLogs } from "@/components/moderator/org-logs-provider";
+import { useModeratorSession } from "@/components/moderator/session-provider";
+import { filterModeratorNav } from "@/lib/auth/policy";
 import { hasUnreadOrgMessages } from "@/lib/moderator-messages";
 import { useModeratorMessagesStore } from "@/lib/mock-messages-store-moderator";
 
@@ -24,10 +26,12 @@ export function SidebarNav() {
   const { pendingCount } = useOrgLogs();
   const { threads } = useModeratorMessagesStore();
   const unreadMessages = hasUnreadOrgMessages(threads);
+  const { session } = useModeratorSession();
+  const items = filterModeratorNav(session, nav);
 
   return (
     <nav className="flex flex-col gap-1 pb-2">
-      {nav.map(({ icon: Icon, label, href }) => {
+      {items.map(({ icon: Icon, label, href }) => {
         const active =
           href === "/moderator"
             ? pathname === "/moderator"
