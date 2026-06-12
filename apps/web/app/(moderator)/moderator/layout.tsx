@@ -1,9 +1,15 @@
 import type { Metadata } from "next";
-import { CommandPalette } from "@/components/moderator/command-palette";
+import { redirect } from "next/navigation";
+import { CommandPaletteLazy } from "@/components/moderator/command-palette-lazy";
 import { MobileNav } from "@/components/moderator/mobile-nav";
 import { ModeratorShell } from "@/components/moderator/moderator-shell";
 import { Sidebar } from "@/components/moderator/sidebar";
-import { getOrgLogs } from "@/lib/mock-store-server-moderator";
+import { requireModerator } from "@/lib/auth/guards";
+import { moderatorProfiles } from "@/lib/mock-data-moderator";
+import {
+  getModeratorShifts,
+  getOrgLogs,
+} from "@/lib/mock-store-server-moderator";
 
 export const metadata: Metadata = {
   title: "Kora — Org Portal",
@@ -11,15 +17,32 @@ export const metadata: Metadata = {
     "Verify student hours, manage shifts, and display check-in codes for your organization.",
 };
 
-export default function ModeratorLayout({
+export default async function ModeratorLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const initialLogs = getOrgLogs();
+  const session = await requireModerator();
+  const persona = moderatorProfiles[session.userId];
+  if (!persona) {
+    redirect("/login");
+  }
+
+  const initialLogs = getOrgLogs(session);
+  const shifts = getModeratorShifts(session);
+
+  const nextUpcomingShift = [...shifts]
+    .filter((shift) => shift.status === "upcoming")
+    .sort(
+      (a, b) =>
+        new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime(),
+    )[0];
+  const qrHref = nextUpcomingShift
+    ? `/moderator/shifts/${nextUpcomingShift.id}`
+    : "/moderator/shifts";
 
   return (
-    <ModeratorShell initialLogs={initialLogs}>
+    <ModeratorShell initialLogs={initialLogs} session={session} persona={persona}>
       <div className="min-h-screen bg-canvas pb-20 text-ink lg:pb-0">
         <a
           href="#main"
@@ -31,8 +54,8 @@ export default function ModeratorLayout({
           <Sidebar />
           {children}
         </div>
-        <MobileNav />
-        <CommandPalette />
+        <MobileNav qrHref={qrHref} />
+        {session.access === "macro" ? <CommandPaletteLazy /> : null}
       </div>
     </ModeratorShell>
   );
