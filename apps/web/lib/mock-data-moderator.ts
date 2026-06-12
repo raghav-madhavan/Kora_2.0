@@ -20,6 +20,26 @@ export const currentModerator: ModeratorProfile = {
     "https://api.dicebear.com/9.x/icons/svg?seed=ParksOrg&backgroundColor=DDF0FB",
 };
 
+/** Micro-level persona: staffs only the Riverside cleanup shift. */
+export const microModerator: ModeratorProfile = {
+  id: "mod_parks_riverside",
+  name: "Dana Whitfield",
+  avatar:
+    "https://api.dicebear.com/9.x/avataaars/svg?seed=Dana&backgroundColor=FBE4F1",
+  roleTitle: "Riverside Shift Lead",
+  totalVerifications: 12,
+  orgId: "org_city_parks",
+  orgName: "City Parks Dept.",
+  orgAvatar:
+    "https://api.dicebear.com/9.x/icons/svg?seed=ParksOrg&backgroundColor=DDF0FB",
+};
+
+/** Lookup for session → display persona (topbar, sidebar, greetings). */
+export const moderatorProfiles: Record<string, ModeratorProfile> = {
+  [currentModerator.id]: currentModerator,
+  [microModerator.id]: microModerator,
+};
+
 /**
  * City Parks shifts as the org sees them. `shift_riverside_cleanup` is the
  * same id the student portal uses, so its QR session is scannable from the
