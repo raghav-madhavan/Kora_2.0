@@ -159,6 +159,8 @@ export const shifts: Shift[] = [
     slots: 12,
     hours: 4,
     img: "https://images.unsplash.com/photo-1530587191325-3db32d826c18?w=600&q=70",
+    location: "Riverside Park, 1200 River Rd",
+    whatToBring: ["Closed-toe shoes", "Water bottle", "Sun hat"],
     saved: true,
     skills: ["outdoor", "teamwork"],
     committed: false,
@@ -180,6 +182,8 @@ export const shifts: Shift[] = [
     slots: 15,
     hours: 3,
     img: "https://images.unsplash.com/photo-1593113598332-cd288d649433?w=600&q=70",
+    location: "Hope Community Kitchen, 450 Oak St",
+    whatToBring: ["Hair tie", "Comfortable clothes"],
     saved: false,
     skills: ["organization", "communication"],
     committed: true,
@@ -201,6 +205,8 @@ export const shifts: Shift[] = [
     slots: 8,
     hours: 2,
     img: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=600&q=70",
+    location: "Lincoln Public Library, 200 Main St",
+    whatToBring: ["Photo ID", "Notebook"],
     saved: false,
     skills: ["tutoring", "patience"],
     committed: false,
@@ -222,6 +228,8 @@ export const shifts: Shift[] = [
     slots: 10,
     hours: 2,
     img: "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=600&q=70",
+    location: "Maplewood Senior Center, 88 Elm Ave",
+    whatToBring: ["Laptop or tablet (optional)"],
     saved: false,
     skills: ["technology", "communication"],
     committed: false,
@@ -243,6 +251,8 @@ export const shifts: Shift[] = [
     slots: 20,
     hours: 6,
     img: "https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=600&q=70",
+    location: "Habitat Build Site, 900 Cedar Ln",
+    whatToBring: ["Work gloves", "Closed-toe boots", "Water bottle"],
     saved: false,
     skills: ["teamwork", "outdoor"],
     committed: false,
@@ -264,6 +274,8 @@ export const shifts: Shift[] = [
     slots: 12,
     hours: 3,
     img: "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=600&q=70",
+    location: "Green City Coalition Garden, 55 Vine St",
+    whatToBring: ["Gardening gloves", "Sunscreen"],
     saved: true,
     skills: ["outdoor", "organization"],
     committed: false,
@@ -285,6 +297,8 @@ export const shifts: Shift[] = [
     slots: 6,
     hours: 3,
     img: "https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=600&q=70",
+    location: "Lincoln Public Library, 200 Main St",
+    whatToBring: ["Calculator", "Scratch paper"],
     saved: false,
     skills: ["tutoring", "communication"],
     committed: false,
@@ -306,13 +320,18 @@ export const shifts: Shift[] = [
     slots: 10,
     hours: 2,
     img: "https://images.unsplash.com/photo-1450778869180-41d0601e046e?w=600&q=70",
+    location: "Paws & Hearts Rescue, 310 Pawprint Way",
+    whatToBring: ["Closed-toe shoes", "Old clothes"],
     saved: false,
     skills: ["patience", "teamwork"],
     committed: false,
   },
 ];
 
-export const committedShifts: string[] = ["shift_food_bank"];
+export const committedShifts: string[] = [
+  "shift_food_bank",
+  "shift_riverside_cleanup",
+];
 
 export const hoursLog: ShiftLog[] = [
   {
@@ -331,6 +350,7 @@ export const hoursLog: ShiftLog[] = [
     qrToken: "kora.v1.mock_verified_hope",
     qrExpiresAt: null,
     verifiedAt: "2026-05-31T18:00:00.000Z",
+    verifiedByModeratorId: "mod_hope",
     completedAt: "2026-05-31T17:00:00.000Z",
   },
   {
@@ -349,7 +369,26 @@ export const hoursLog: ShiftLog[] = [
     qrToken: "kora.v1.mock_verified_parks",
     qrExpiresAt: null,
     verifiedAt: "2026-05-24T15:00:00.000Z",
+    verifiedByModeratorId: "mod_parks",
     completedAt: "2026-05-24T14:00:00.000Z",
+  },
+  {
+    id: "log_riverside_pending",
+    shiftId: "shift_riverside_cleanup",
+    org: "City Parks Dept.",
+    date: "Jun 7, 2026",
+    category: "Environment",
+    categoryKey: "environment",
+    categoryTint: "sky",
+    activity: "Riverside Park Cleanup & Tree Planting",
+    hours: 4,
+    status: "pending",
+    avatar:
+      "https://images.unsplash.com/photo-1530587191325-3db32d826c18?w=600&q=70",
+    qrToken: null,
+    qrExpiresAt: null,
+    verifiedAt: null,
+    completedAt: "2026-06-07T17:00:00.000Z",
   },
   {
     id: "log_library_may20",
@@ -385,6 +424,8 @@ export const hoursLog: ShiftLog[] = [
     qrToken: "kora.v1.mock_flagged_senior",
     qrExpiresAt: null,
     verifiedAt: null,
+    flagReason:
+      "Hours matched 3 other students within 10 minutes — flagged for counselor review per school policy.",
     completedAt: "2026-05-16T18:00:00.000Z",
   },
   {
@@ -529,6 +570,8 @@ export const hoursLog: ShiftLog[] = [
     qrToken: null,
     qrExpiresAt: null,
     verifiedAt: null,
+    flagReason:
+      "Duplicate entry detected for the same shift window. Contact your counselor to resolve.",
     completedAt: "2026-03-22T17:00:00.000Z",
   },
 ];
@@ -746,7 +789,7 @@ export const conversationThreads: ConversationThread[] = [
   {
     id: "thread_friend_jordan",
     kind: "friend",
-    pinned: true,
+    pinned: false,
     unread: true,
     contactId: "friend_jordan",
     contactName: "Jordan Park",
@@ -778,7 +821,7 @@ export const conversationThreads: ConversationThread[] = [
   {
     id: "thread_food_bank",
     kind: "moderator",
-    pinned: true,
+    pinned: false,
     unread: false,
     contactId: "mod_hope",
     contactName: "Marcus Webb",
@@ -904,7 +947,7 @@ export const appNotifications: AppNotification[] = [
     body: "Marcus Webb approved 3 hrs for Weekend Food Bank Sorting Shift at Hope Community Kitchen.",
     read: false,
     createdAt: "2026-06-08T21:05:00.000Z",
-    href: "/hours",
+    href: "/hours/log_hope_may31",
   },
   {
     id: "notif_motivation_bright_futures",
@@ -922,7 +965,7 @@ export const appNotifications: AppNotification[] = [
     body: "Elena Vasquez approved 3 hrs for Riverside Park Cleanup at City Parks Dept.",
     read: true,
     createdAt: "2026-05-24T16:00:00.000Z",
-    href: "/hours",
+    href: "/hours/log_parks_may24",
   },
   {
     id: "notif_motivation_graduation",

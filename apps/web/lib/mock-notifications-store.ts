@@ -10,6 +10,27 @@ function cloneSeedNotifications(): AppNotification[] {
   return seedNotifications.map((notification) => ({ ...notification }));
 }
 
+function mergeNotifications(
+  local: AppNotification[],
+  server: AppNotification[],
+): AppNotification[] {
+  const seen = new Set<string>();
+  const merged: AppNotification[] = [];
+
+  for (const notification of [...server, ...local]) {
+    if (seen.has(notification.id)) {
+      continue;
+    }
+    seen.add(notification.id);
+    merged.push(notification);
+  }
+
+  return merged.sort(
+    (a, b) =>
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  );
+}
+
 function loadNotifications(): AppNotification[] {
   if (typeof window === "undefined") {
     return cloneSeedNotifications();
@@ -36,8 +57,14 @@ function saveNotifications(notifications: AppNotification[]): void {
 const serverSnapshot = cloneSeedNotifications();
 
 let notifications = cloneSeedNotifications();
+let serverNotifications: AppNotification[] = [];
 const listeners = new Set<() => void>();
 let hydrated = false;
+
+export function syncServerNotifications(next: AppNotification[]): void {
+  serverNotifications = next;
+  emitChange();
+}
 
 function emitChange(): void {
   listeners.forEach((listener) => listener());
@@ -53,7 +80,7 @@ function ensureHydrated(): void {
 
 function getSnapshot(): AppNotification[] {
   ensureHydrated();
-  return notifications;
+  return mergeNotifications(notifications, serverNotifications);
 }
 
 function getServerSnapshot(): AppNotification[] {

@@ -39,3 +39,33 @@ Use fast mode for:
 - tRPC boilerplate
 - Prisma query writing
 - Config and setup tasks
+
+## Agent Skills
+
+Skills live in `.agents/skills/`. **Read the relevant `SKILL.md` before acting** — do not improvise when a skill applies.
+
+### Mandatory workflow
+
+1. **Brainstorming** (superpowers) — use before any creative work: new features, components, behavior changes, or UI work. Present a design and get approval before writing code.
+2. **Design skills** (`.agents/skills/`) — use whenever the task touches visual design, UX polish, branding, or frontend aesthetics. If there is even a small chance a design skill applies, read it first and follow it.
+
+### Design skill picker
+
+| Task | Skill |
+|---|---|
+| New landing page, portfolio, or marketing site | `design-taste-frontend` |
+| Redesign or polish existing UI | `redesign-existing-projects` |
+| Premium agency-level visual standards | `high-end-visual-design` |
+| UI polish, animation, micro-interactions | `emil-design-eng` |
+| Minimalist / editorial aesthetic | `minimalist-ui` |
+| Brutalist / industrial dashboard aesthetic | `industrial-brutalist-ui` |
+| GSAP motion, editorial landing pages | `gpt-taste` |
+| Brand identity, logo systems, guidelines | `brandkit` |
+| Generate web design reference images | `imagegen-frontend-web` |
+| Generate mobile screen concepts | `imagegen-frontend-mobile` |
+| Implement from a design image or mockup | `image-to-code` |
+| Google Stitch / DESIGN.md design systems | `stitch-design-taste` |
+| Large UI output that must not truncate | `full-output-enforcement` |
+| Legacy v1 taste-skill behavior only | `design-taste-frontend-v1` |
+
+Default for Kora student/org portal UI work: `redesign-existing-projects` + `emil-design-eng`. Default for new marketing pages: `design-taste-frontend`.

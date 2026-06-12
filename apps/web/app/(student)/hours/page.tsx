@@ -1,13 +1,17 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { PageShell } from "@/components/student/page-shell";
 import { PageHeader } from "@/components/student/page-header";
 import { HoursLedger } from "@/components/student/hours-ledger";
-import { getAllHoursLogs } from "@/lib/mock-store-server";
+
+function HoursLedgerFallback() {
+  return (
+    <div className="h-64 animate-pulse rounded-card bg-surface shadow-card" />
+  );
+}
 
 export default function HoursPage() {
-  const logs = getAllHoursLogs();
-
   return (
     <PageShell>
       <PageHeader
@@ -23,7 +27,9 @@ export default function HoursPage() {
           </Link>
         }
       />
-      <HoursLedger logs={logs} />
+      <Suspense fallback={<HoursLedgerFallback />}>
+        <HoursLedger />
+      </Suspense>
     </PageShell>
   );
 }

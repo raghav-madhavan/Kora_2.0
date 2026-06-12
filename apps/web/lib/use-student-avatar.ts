@@ -1,19 +1,19 @@
 "use client";
 
 import { useMemo } from "react";
-import { getVerifiedHours } from "@/lib/compliance";
 import {
   getHighestUnlockedHat,
   isHatUnlocked,
   normalizeAvatarConfig,
 } from "@/lib/avatar";
-import { hoursLog } from "@/lib/mock-data";
 import { useProfileStore } from "@/lib/mock-profile-store";
+import { useHoursOptional } from "@/components/student/hours-provider";
 import type { AvatarConfig } from "@/lib/types/student";
 
 export function useStudentAvatar(): AvatarConfig {
   const { avatar } = useProfileStore();
-  const verifiedHours = getVerifiedHours(hoursLog);
+  const hoursCtx = useHoursOptional();
+  const verifiedHours = hoursCtx?.progress.verifiedHours ?? 0;
   const normalized = normalizeAvatarConfig(avatar);
 
   return useMemo(() => {

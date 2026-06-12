@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ScanLine } from "lucide-react";
 import { PageHeader } from "@/components/student/page-header";
 import { ScanQrPanel } from "@/components/student/scan-qr-panel";
+import { LogHoursMobileList } from "@/components/student/log-hours-mobile-list";
 import { useMockStore } from "@/lib/mock-store";
 import { getModeratorById, tints } from "@/lib/mock-data";
 
@@ -37,7 +38,9 @@ export function LogHoursPageClient({ demoToken }: LogHoursPageClientProps) {
         <ScanQrPanel demoToken={demoToken} />
       </div>
 
-      <div className="overflow-hidden rounded-card bg-surface shadow-card">
+      <LogHoursMobileList shifts={committedShifts} />
+
+      <div className="hidden overflow-hidden rounded-card bg-surface shadow-card md:block">
         {committedShifts.length === 0 ? (
           <p className="px-6 py-12 text-center text-[15px] text-muted">
             No committed shifts yet. Browse{" "}

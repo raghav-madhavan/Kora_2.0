@@ -12,6 +12,20 @@ const nextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: "/student",
+        destination: "/",
+        permanent: false,
+      },
+      {
+        source: "/student/:path*",
+        destination: "/:path*",
+        permanent: false,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

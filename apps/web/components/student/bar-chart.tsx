@@ -8,7 +8,7 @@ export function BarChart() {
   return (
     <div className="rounded-card bg-canvas/70 p-4">
       <div className="flex gap-3">
-        <div className="flex flex-col justify-between py-1 text-[11px] font-medium text-muted">
+        <div className="flex flex-col justify-between py-1 font-mono text-[10px] font-medium text-muted">
           {ticks.map((t) => (
             <span key={t}>{t}</span>
           ))}
@@ -21,7 +21,7 @@ export function BarChart() {
             ))}
           </div>
 
-          {monthlyHours.map((m) => {
+          {monthlyHours.map((m, i) => {
             const isPeak = m.label === peak.label;
             return (
               <div
@@ -29,13 +29,20 @@ export function BarChart() {
                 className="flex w-full flex-col items-center gap-2"
               >
                 <div
-                  className={`w-full max-w-[26px] rounded-t-lg transition-all ${
-                    isPeak ? "bg-primary" : "bg-chart-track"
+                  className={`animate-grow w-full max-w-[26px] origin-bottom rounded-t-lg transition-colors ${
+                    isPeak ? "bg-primary" : "bg-chart-track hover:bg-primary/30"
                   }`}
-                  style={{ height: `${(m.value / max) * 120}px` }}
+                  style={{
+                    height: `${(m.value / max) * 120}px`,
+                    animationDelay: `${i * 70}ms`,
+                  }}
                   title={`${m.value} hrs`}
                 />
-                <span className="text-[11px] font-medium text-muted">
+                <span
+                  className={`font-mono text-[10px] font-medium uppercase ${
+                    isPeak ? "text-primary" : "text-muted"
+                  }`}
+                >
                   {m.label}
                 </span>
               </div>

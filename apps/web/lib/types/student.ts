@@ -1,6 +1,6 @@
 export type CategoryKey = "community" | "environment" | "education";
 export type TintKey = "lavender" | "pink" | "sky";
-export type LogStatus = "verified" | "pending" | "flagged";
+export type LogStatus = "verified" | "pending" | "flagged" | "rejected";
 
 export type AvatarHair =
   | "short"
@@ -69,6 +69,8 @@ export interface Shift {
   slots: number;
   hours: number;
   img: string;
+  location: string;
+  whatToBring: string[];
   saved: boolean;
   skills: string[];
   committed: boolean;
@@ -89,6 +91,9 @@ export interface ShiftLog {
   qrToken: string | null;
   qrExpiresAt: string | null;
   verifiedAt: string | null;
+  verifiedByModeratorId?: string;
+  flagReason?: string;
+  rejectReason?: string;
   completedAt: string;
 }
 

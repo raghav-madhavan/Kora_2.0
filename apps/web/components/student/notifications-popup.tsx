@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, type RefObject } from "react";
 import Link from "next/link";
 import { BadgeCheck, Sparkles, Target } from "lucide-react";
 import {
@@ -13,6 +13,7 @@ import type { AppNotification, NotificationKind } from "@/lib/types/student";
 interface NotificationsPopupProps {
   open: boolean;
   onClose: () => void;
+  anchorRef: RefObject<HTMLElement | null>;
 }
 
 const kindConfig: Record<
@@ -84,9 +85,12 @@ function NotificationRow({
   );
 }
 
-export function NotificationsPopup({ open, onClose }: NotificationsPopupProps) {
+export function NotificationsPopup({
+  open,
+  onClose,
+  anchorRef,
+}: NotificationsPopupProps) {
   const { notifications, markRead, markAllRead } = useNotificationsStore();
-  const popupRef = useRef<HTMLDivElement>(null);
   const sorted = sortNotifications(notifications);
   const unreadCount = notifications.filter(
     (notification) => !notification.read,
@@ -98,27 +102,22 @@ export function NotificationsPopup({ open, onClose }: NotificationsPopupProps) {
     }
 
     const handleClick = (event: MouseEvent) => {
-      if (
-        popupRef.current &&
-        !popupRef.current.contains(event.target as Node)
-      ) {
-        onClose();
+      if (anchorRef.current?.contains(event.target as Node)) {
+        return;
       }
+      onClose();
     };
 
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
-  }, [open, onClose]);
+  }, [open, onClose, anchorRef]);
 
   if (!open) {
     return null;
   }
 
   return (
-    <div
-      ref={popupRef}
-      className="absolute right-0 top-[calc(100%+12px)] z-50 w-[360px] overflow-hidden rounded-card bg-surface shadow-raised"
-    >
+    <div className="absolute right-0 top-[calc(100%+12px)] z-50 w-[360px] overflow-hidden rounded-card bg-surface shadow-raised">
       <div className="flex items-center justify-between border-b border-black/5 px-5 py-4">
         <div>
           <p className="text-[15px] font-bold">Notifications</p>

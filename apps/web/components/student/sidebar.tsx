@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Settings, LogOut, Sparkles, PanelLeftClose, PanelLeft } from "lucide-react";
+import { User, LogOut, PanelLeftClose, PanelLeft } from "lucide-react";
 import { SidebarNav } from "@/components/student/sidebar-nav";
-import { SidebarMessagesSection } from "@/components/student/sidebar-messages-section";
+import { useToast } from "@/components/student/toast-provider";
 
 const STORAGE_KEY = "kora-sidebar-collapsed";
 
@@ -26,10 +26,10 @@ function SectionLabel({
 }) {
   return (
     <p
-      className={`overflow-hidden px-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted transition-all ${SIDEBAR_EASE} ${
+      className={`shrink-0 px-3 font-mono text-[10px] font-semibold uppercase leading-snug tracking-[0.18em] text-muted/80 transition-all ${SIDEBAR_EASE} ${
         collapsed
-          ? "mb-0 mt-0 max-h-0 opacity-0"
-          : "mb-3 mt-7 max-h-6 opacity-100"
+          ? "mb-0 mt-0 h-0 overflow-hidden opacity-0"
+          : "mb-2 mt-6 opacity-100"
       }`}
     >
       {children}
@@ -40,6 +40,7 @@ function SectionLabel({
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const toast = useToast();
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -57,7 +58,7 @@ export function Sidebar() {
 
   return (
     <aside
-      className={`relative sticky top-0 hidden h-screen shrink-0 flex-col overflow-hidden bg-surface py-7 transition-[width,padding] ${SIDEBAR_EASE} lg:flex ${
+      className={`relative sticky top-0 hidden h-screen shrink-0 flex-col bg-surface py-7 transition-[width,padding] ${SIDEBAR_EASE} lg:flex ${
         collapsed ? "w-[76px] px-3" : "w-[244px] px-6"
       } ${mounted ? "" : "w-[244px] px-6"}`}
     >
@@ -76,22 +77,23 @@ export function Sidebar() {
           }`}
         >
           {collapsed ? (
-            <Sparkles
-              size={20}
-              strokeWidth={2.2}
-              className="shrink-0 text-primary"
-            />
+            <span className="shrink-0 font-display text-[22px] font-bold italic leading-none text-primary">
+              K
+            </span>
           ) : (
-            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary text-white shadow-raised">
-              <Sparkles size={18} strokeWidth={2.5} />
+            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-panel shadow-raised">
+              <span className="font-display text-[19px] font-bold italic leading-none text-cream">
+                K
+              </span>
+              <span className="sr-only">Kora</span>
             </div>
           )}
           <span
-            className={`inline-block overflow-hidden whitespace-nowrap text-[20px] font-extrabold tracking-tight transition-[max-width,opacity,margin] ${sidebarFade(
+            className={`inline-block overflow-hidden whitespace-nowrap font-display text-[22px] font-semibold italic tracking-tight transition-[max-width,opacity,margin] ${sidebarFade(
               collapsed,
             )} ${collapsed ? "ml-0" : ""}`}
           >
-            Kora
+            Kora<span className="not-italic text-ember">.</span>
           </span>
         </div>
 
@@ -127,31 +129,32 @@ export function Sidebar() {
         </button>
       </div>
 
-      <SectionLabel collapsed={collapsed}>Overview</SectionLabel>
-      <SidebarNav collapsed={collapsed} />
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden">
+        <SectionLabel collapsed={collapsed}>Overview</SectionLabel>
+        <SidebarNav collapsed={collapsed} />
+      </div>
 
-      <SidebarMessagesSection collapsed={collapsed} />
-
-      <div className="mt-auto">
-        <SectionLabel collapsed={collapsed}>Settings</SectionLabel>
+      <div className="mt-auto shrink-0 pt-2">
+        <SectionLabel collapsed={collapsed}>Account</SectionLabel>
         <Link
-          href="#"
-          title={collapsed ? "Settings" : undefined}
+          href="/profile"
+          title={collapsed ? "Profile" : undefined}
           className={`flex items-center rounded-chip py-2.5 text-[15px] font-medium text-muted transition-all ${SIDEBAR_EASE} hover:bg-accent-lavender/50 hover:text-ink ${
             collapsed ? "justify-center px-2.5" : "gap-3 px-3"
           }`}
         >
-          <Settings size={20} strokeWidth={2.2} className="shrink-0" />
+          <User size={20} strokeWidth={2.2} className="shrink-0" />
           <span
             className={`inline-block overflow-hidden whitespace-nowrap transition-[max-width,opacity] ${sidebarFade(collapsed)}`}
           >
-            Settings
+            Profile
           </span>
         </Link>
-        <Link
-          href="#"
+        <button
+          type="button"
           title={collapsed ? "Logout" : undefined}
-          className={`flex items-center rounded-chip py-2.5 text-[15px] font-semibold text-danger transition-all ${SIDEBAR_EASE} hover:bg-danger/10 ${
+          onClick={() => toast.success("Sign-in coming soon")}
+          className={`flex w-full items-center rounded-chip py-2.5 text-[15px] font-semibold text-danger transition-all ${SIDEBAR_EASE} hover:bg-danger/10 ${
             collapsed ? "justify-center px-2.5" : "gap-3 px-3"
           }`}
         >
@@ -161,7 +164,7 @@ export function Sidebar() {
           >
             Logout
           </span>
-        </Link>
+        </button>
       </div>
     </aside>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Clock,
   Flame,
@@ -9,7 +9,6 @@ import {
   X,
   Link2,
 } from "lucide-react";
-import { getVerifiedHours } from "@/lib/compliance";
 import {
   ACCESSORY_OPTIONS,
   BACKGROUND_OPTIONS,
@@ -23,11 +22,15 @@ import {
   BACKGROUND_COLORS,
   isHatUnlocked,
 } from "@/lib/avatar";
-import { hoursLog, student } from "@/lib/mock-data";
+import { student } from "@/lib/mock-data";
 import { useProfileStore } from "@/lib/mock-profile-store";
+import { useMockStore } from "@/lib/mock-store";
+import { useHours } from "@/components/student/hours-provider";
+import { useToast } from "@/components/student/toast-provider";
 import { getSkillEmoji, getSkillLabel, SKILL_SUGGESTIONS } from "@/lib/skills";
 import { useStudentAvatar } from "@/lib/use-student-avatar";
 import { HatIcon, StudentAvatar } from "@/components/student/student-avatar";
+import { rankShiftsForStudent } from "@/lib/matching";
 
 function parseGradeAndSchool(gradeLine: string) {
   const parts = gradeLine.split(" · ");
@@ -86,17 +89,37 @@ export function ProfilePageClient() {
     toggleSkill,
   } = useProfileStore();
   const avatar = useStudentAvatar();
+  const { progress, categoryGaps } = useHours();
+  const store = useMockStore();
+  const toast = useToast();
+  const verifiedHours = progress.verifiedHours;
   const [editing, setEditing] = useState(false);
   const [skillDraft, setSkillDraft] = useState("");
-
-  const verifiedHours = getVerifiedHours(hoursLog);
   const { grade, school } = parseGradeAndSchool(student.grade);
+
+  const matchCount = useMemo(() => {
+    const allShifts = store.getShifts();
+    return rankShiftsForStudent(skills, allShifts, { categoryGaps }).filter(
+      (s) => s.matchScore > 0,
+    ).length;
+  }, [skills, store, categoryGaps]);
 
   const handleAddSkill = () => {
     const added = addSkill(skillDraft);
     if (added) {
       setSkillDraft("");
+      toast.success("Recommendations updated");
     }
+  };
+
+  const handleRemoveSkill = (skill: string) => {
+    removeSkill(skill);
+    toast.success("Recommendations updated");
+  };
+
+  const handleToggleSkill = (skill: string) => {
+    toggleSkill(skill);
+    toast.success("Recommendations updated");
   };
 
   const handleHatSelect = (hat: (typeof HAT_UNLOCKS)[number]["hat"]) => {
@@ -126,6 +149,11 @@ export function ProfilePageClient() {
                   <Flame size={14} />
                   {student.streakWeeks}-week streak
                 </span>
+                {matchCount > 0 ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-pill bg-success/15 px-3.5 py-1.5 text-[13px] font-semibold text-success">
+                    ✦ {matchCount} event{matchCount === 1 ? "" : "s"} match your skills
+                  </span>
+                ) : null}
               </div>
             </div>
           </div>
@@ -325,7 +353,7 @@ export function ProfilePageClient() {
                   <button
                     key={suggestion.value}
                     type="button"
-                    onClick={() => toggleSkill(suggestion.value)}
+                    onClick={() => handleToggleSkill(suggestion.value)}
                     className={`inline-flex items-center gap-1.5 rounded-pill px-3.5 py-1.5 text-[13px] font-semibold transition ${
                       active
                         ? "bg-primary text-white"
@@ -354,7 +382,7 @@ export function ProfilePageClient() {
                     {getSkillLabel(skill)}
                     <button
                       type="button"
-                      onClick={() => removeSkill(skill)}
+                      onClick={() => handleRemoveSkill(skill)}
                       className="rounded-full p-0.5 transition hover:bg-primary/20"
                       aria-label={`Remove ${skill}`}
                     >

@@ -1,38 +1,74 @@
 @import "tailwindcss";
 
 @theme {
-  /* Kora brand palette */
-  --color-primary: #00c4cc;
-  --color-primary-deep: #00a8b0;
-  --color-banner-from: #00c4cc;
-  --color-banner-to: #00a8b0;
-  --color-ink: #2d2d2d;
-  --color-ink-button: #2d2d2d;
-  --color-muted: #757575;
-  --color-canvas: #faf9f6;
-  --color-sidebar: #f3f2ee;
+  /* ── Kora Ledger palette ─────────────────────────────────────────────
+     Warm paper + confident ink + deep teal, with ember and gold accents.
+     Token names are stable; ~34 components consume them. */
+  --color-primary: #0b8f88;
+  --color-primary-deep: #086b66;
+  --color-banner-from: #0b8f88;
+  --color-banner-to: #086b66;
+  --color-ink: #1a1915;
+  --color-ink-button: #1a1915;
+  --color-panel: #152420;
+  --color-panel-soft: #21342e;
+  --color-cream: #f3efe2;
+  --color-muted: #6f6a5e;
+  --color-canvas: #f6f4ee;
+  --color-sidebar: #f0ede4;
   --color-surface: #ffffff;
-  --color-accent-lavender: #efeeea;
-  --color-accent-pink: #fbe4f1;
-  --color-accent-sky: #ddf0fb;
-  --color-icon-pink: #ec68a6;
-  --color-icon-sky: #4db7e8;
-  --color-chart-track: #e8e6e0;
-  --color-danger: #f4663f;
-  --color-success: #4caf50;
-  --color-pending: #ffb300;
-  --color-flagged: #f4663f;
+  --color-accent-lavender: #ece9e0;
+  --color-accent-pink: #f9e3ea;
+  --color-accent-sky: #ddedf5;
+  --color-icon-pink: #d2548e;
+  --color-icon-sky: #3e95c4;
+  --color-chart-track: #e7e3d8;
+  --color-ember: #ff6b3d;
+  --color-gold: #e8a93d;
+  --color-danger: #e0492e;
+  --color-success: #3d9a50;
+  --color-pending: #e8a93d;
+  --color-flagged: #e0492e;
 
-  --font-sans: var(--font-inter), "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-sans: var(--font-jakarta), "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-display: var(--font-fraunces), "Iowan Old Style", Georgia, serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, "SF Mono", monospace;
 
   --radius-chip: 12px;
   --radius-card: 20px;
   --radius-pill: 999px;
 
-  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.05);
-  --shadow-raised: 0 4px 16px rgba(0, 0, 0, 0.08);
+  --shadow-card: 0 1px 2px rgba(26, 25, 21, 0.04), 0 4px 14px rgba(26, 25, 21, 0.05);
+  --shadow-raised: 0 2px 4px rgba(26, 25, 21, 0.06), 0 14px 32px rgba(26, 25, 21, 0.1);
+  --shadow-panel: 0 8px 18px rgba(13, 22, 19, 0.22), 0 28px 56px rgba(13, 22, 19, 0.18);
 
   --max-width-shell: 1440px;
+
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --animate-rise: rise 0.45s var(--ease-soft) both;
+  --animate-grow: grow 0.6s var(--ease-soft) both;
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes grow {
+    from {
+      transform: scaleY(0);
+    }
+    to {
+      transform: scaleY(1);
+    }
+  }
 }
 
 html {
@@ -47,10 +83,76 @@ body {
   font-family: var(--font-sans);
 }
 
+/* Paper grain over everything — the canvas should feel printed, not painted */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  pointer-events: none;
+  opacity: 0.3;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='linear' slope='0.05'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
 
-/* Sidebar uses bg-surface class; Kora spec assigns it soft gray */
+::selection {
+  background: rgba(11, 143, 136, 0.22);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Sidebar uses bg-surface class; Kora spec assigns it the paper tone */
 aside.bg-surface {
   background-color: var(--color-sidebar);
+}
+
+/* Display type defaults — Fraunces wants tighter rhythm */
+.font-display {
+  letter-spacing: -0.01em;
+  font-variation-settings: "opsz" 40;
+}
+
+/* Mono ledger text defaults */
+.font-mono {
+  font-feature-settings: "tnum" 1;
+}
+
+/* Staggered entrance for card stacks: wrap siblings in .stagger.
+   Delays stay in the 30-80ms band per item so the cascade never feels slow. */
+.stagger > * {
+  animation: rise 0.45s var(--ease-soft) both;
+}
+.stagger > :nth-child(2) {
+  animation-delay: 50ms;
+}
+.stagger > :nth-child(3) {
+  animation-delay: 100ms;
+}
+.stagger > :nth-child(4) {
+  animation-delay: 150ms;
+}
+.stagger > :nth-child(5) {
+  animation-delay: 200ms;
+}
+.stagger > :nth-child(6) {
+  animation-delay: 250ms;
+}
+.stagger > :nth-child(n + 7) {
+  animation-delay: 300ms;
+}
+
+/* Pressed feedback on every button — the independent `scale` property
+   so it composes with transform utilities. In @layer base so Tailwind
+   transition utilities (whose property list includes scale) still win. */
+@layer base {
+  button:not(:disabled) {
+    transition: scale 160ms var(--ease-soft);
+  }
+  button:not(:disabled):active {
+    scale: 0.97;
+  }
 }
 
 ::-webkit-scrollbar {
@@ -59,12 +161,12 @@ aside.bg-surface {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #e0ded8;
+  background: #ddd9cd;
   border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #d4d2cc;
+  background: #cfcaba;
 }
 
 .no-scrollbar::-webkit-scrollbar {
@@ -110,4 +212,81 @@ a svg,
 
 .requirement-card-active {
   animation: requirement-card-enter 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* ── Requirement slide ambience ──────────────────────────────────────
+   Layered atmosphere for the dark hero slides: a slowly drifting accent
+   glow, faint ledger ruling, and paper grain — same printed-ledger
+   language as the rest of the canvas, but alive. */
+@keyframes slide-aurora {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.75;
+  }
+  50% {
+    transform: translate3d(-4%, 3%, 0) scale(1.12);
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.75;
+  }
+}
+
+.slide-aurora {
+  animation: slide-aurora 16s var(--ease-soft) infinite;
+  will-change: transform, opacity;
+}
+
+/* Hairline ruling — the ledger lines, faint over the dark panel */
+.slide-rule {
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 31px,
+    rgba(243, 239, 226, 0.045) 31px,
+    rgba(243, 239, 226, 0.045) 32px
+  );
+  mask-image: linear-gradient(180deg, transparent, #000 18%, #000 82%, transparent);
+}
+
+/* Grain overlay matched to the body texture, tuned for dark surfaces */
+.slide-grain {
+  opacity: 0.5;
+  mix-blend-mode: soft-light;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='linear' slope='0.08'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Cursor-tracked spotlight — eased toward the pointer for an interactive feel */
+.slide-spotlight {
+  transition: background-position 240ms var(--ease-soft);
+}
+
+/* Slow Ken Burns drift on the active slide's nature photo — subtle, not distracting */
+@keyframes slide-nature-drift {
+  0% {
+    transform: scale(1.06) translate3d(0, 0, 0);
+  }
+  100% {
+    transform: scale(1.12) translate3d(-1.2%, 0.8%, 0);
+  }
+}
+
+.slide-nature-photo {
+  opacity: 0.58;
+  will-change: transform;
+}
+
+.slide-nature-photo-active {
+  animation: slide-nature-drift 28s var(--ease-soft) infinite alternate;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

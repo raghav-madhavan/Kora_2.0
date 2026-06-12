@@ -1,13 +1,30 @@
+import "server-only";
+
 import {
   committedShifts as seedCommittedShifts,
-  hoursLog as seedHoursLog,
   shifts,
   student,
 } from "@/lib/mock-data";
+import { createPairedLogsFromQrScan } from "@/lib/hours-sync";
+import { createOrgLogFromScan } from "@/lib/mock-store-server-moderator";
 import { generateShiftQrToken, verifyShiftQrToken } from "@/lib/qr-token";
+import {
+  getAllHoursLogs,
+  getScannedLogs,
+  getScannedShiftIds,
+  patchHoursLog,
+  upsertHoursLog,
+} from "@/lib/student-hours-server";
 import type { ShiftLog } from "@/lib/types/student";
 
-interface ShiftQrSession {
+export {
+  getAllHoursLogs,
+  getScannedLogs,
+  patchHoursLog,
+  upsertHoursLog,
+} from "@/lib/student-hours-server";
+
+export interface ShiftQrSession {
   shiftId: string;
   token: string;
   issuedAt: number;
@@ -33,19 +50,50 @@ function buildSeedSessions(): ShiftQrSession[] {
   });
 }
 
-let shiftQrSessions: ShiftQrSession[] = buildSeedSessions();
+let shiftQrSessions: ShiftQrSession[] | null = null;
 let committedShiftIds: string[] = [...seedCommittedShifts];
-let scannedShiftIds: string[] = [];
-let scannedLogs: ShiftLog[] = [];
+
+function getShiftQrSessionsState(): ShiftQrSession[] {
+  if (!shiftQrSessions) {
+    shiftQrSessions = buildSeedSessions();
+  }
+  return shiftQrSessions;
+}
 
 export function getShiftQrSessions(): ShiftQrSession[] {
-  return shiftQrSessions;
+  return getShiftQrSessionsState();
 }
 
 export function getActiveShiftQrSession(
   token: string,
 ): ShiftQrSession | undefined {
-  return shiftQrSessions.find((session) => session.token === token);
+  return getShiftQrSessionsState().find((session) => session.token === token);
+}
+
+/** Returns the live session for a shift, minting a fresh one if missing or expired. */
+export function ensureShiftQrSession(shiftId: string): ShiftQrSession {
+  const sessions = getShiftQrSessionsState();
+  const existing = sessions.find((s) => s.shiftId === shiftId);
+  if (existing && new Date(existing.expiresAt).getTime() > Date.now()) {
+    return existing;
+  }
+  return refreshShiftQrSession(shiftId);
+}
+
+/** Rotates the shift's QR session; the old token stops validating immediately. */
+export function refreshShiftQrSession(shiftId: string): ShiftQrSession {
+  const { token, expiresAt, issuedAt } = generateShiftQrToken(shiftId);
+  const session: ShiftQrSession = {
+    shiftId,
+    token,
+    issuedAt,
+    expiresAt: expiresAt.toISOString(),
+  };
+  shiftQrSessions = [
+    ...getShiftQrSessionsState().filter((s) => s.shiftId !== shiftId),
+    session,
+  ];
+  return session;
 }
 
 export function isStudentCommittedToShift(shiftId: string): boolean {
@@ -59,34 +107,15 @@ export function addCommittedShift(shiftId: string): void {
 }
 
 export function hasScannedShift(shiftId: string): boolean {
-  if (scannedShiftIds.includes(shiftId)) {
+  if (getScannedShiftIds().includes(shiftId)) {
     return true;
   }
 
-  return seedHoursLog.some(
-    (log) => log.shiftId === shiftId && log.status === "verified",
-  );
+  return getAllHoursLogs().some((log) => log.shiftId === shiftId);
 }
 
 export function getStudentId(): string {
   return student.id;
-}
-
-export function getScannedLogs(): ShiftLog[] {
-  return scannedLogs;
-}
-
-export function getAllHoursLogs(): ShiftLog[] {
-  const scannedIds = new Set(scannedLogs.map((log) => log.id));
-  const merged = [
-    ...scannedLogs,
-    ...seedHoursLog.filter((log) => !scannedIds.has(log.id)),
-  ];
-
-  return merged.sort(
-    (a, b) =>
-      new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime(),
-  );
 }
 
 export interface ScanShiftQrResult {
@@ -125,7 +154,7 @@ export function scanShiftQr(token: string): ScanShiftQrResult {
   }
 
   const now = new Date();
-  const shiftLog: ShiftLog = {
+  const baseLog: ShiftLog = {
     id: `log_scan_${session.shiftId}_${now.getTime()}`,
     shiftId: session.shiftId,
     org: shift.org,
@@ -139,17 +168,19 @@ export function scanShiftQr(token: string): ScanShiftQrResult {
     categoryTint: shift.categoryTint,
     activity: shift.title,
     hours: shift.hours,
-    status: "verified",
+    status: "pending",
     avatar: shift.img,
     qrToken: token,
     qrExpiresAt: session.expiresAt,
-    verifiedAt: now.toISOString(),
+    verifiedAt: null,
     completedAt: now.toISOString(),
   };
 
-  scannedShiftIds = [...scannedShiftIds, session.shiftId];
-  scannedLogs = [shiftLog, ...scannedLogs];
-  shiftQrSessions = shiftQrSessions.filter((s) => s.token !== token);
+  const { shiftLog, orgLog } = createPairedLogsFromQrScan(baseLog);
+  upsertHoursLog(shiftLog);
+  createOrgLogFromScan(orgLog);
+
+  shiftQrSessions = getShiftQrSessionsState().filter((s) => s.token !== token);
 
   return {
     shiftLog,

@@ -9,17 +9,13 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowRight, ChevronLeft, ChevronRight, Plus } from "lucide-react";
-import {
-  getBrightFuturesTiers,
-  getCategoryGoals,
-  getGraduationRequirement,
-  getVerifiedHours,
-  getVerifiedHoursByCategory,
-} from "@/lib/compliance";
-import { hoursLog, student } from "@/lib/mock-data";
+import { getBrightFuturesTiers } from "@/lib/compliance";
+import { student } from "@/lib/mock-data";
+import { useHours } from "@/components/student/hours-provider";
 import { ProgressRing } from "@/components/student/progress-ring";
-import type { CategoryKey } from "@/lib/types/student";
+import { useCountUp } from "@/lib/use-count-up";
 
 const SPRING_EASING = "cubic-bezier(0.34, 1.56, 0.64, 1)";
 const TRANSITION_MS = 550;
@@ -28,65 +24,161 @@ const SWIPE_THRESHOLD = 40;
 const SWIPE_VELOCITY = 0.35;
 const AXIS_LOCK_PX = 10;
 
-const categoryLabels: Record<CategoryKey, string> = {
-  community: "Community",
-  environment: "Environment",
-  education: "Education",
-};
+/** Muted nature scenes keyed to each slide’s theme. */
+const SLIDE_NATURE = {
+  graduation: {
+    src: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&q=55",
+    position: "center 55%",
+  },
+  silver: {
+    src: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=55",
+    position: "center 35%",
+  },
+  gold: {
+    src: "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=800&q=55",
+    position: "center center",
+  },
+} as const;
 
-type SlideKind = "graduation" | "silver" | "gold" | "categories";
+type SlideKind = keyof typeof SLIDE_NATURE;
 
 interface RequirementSlide {
   id: SlideKind;
   eyebrow: string;
   title: string;
+  /** Short display label under the giant stat, e.g. "hours toward graduation". */
+  label: string;
+  /** Mono ledger tag in the slide footer, e.g. "Req · Graduation". */
+  meta: string;
   logged: number;
   required: number;
   background: string;
+  barColor: string;
+  /** Per-slide accent hex — drives the tier dot and progress glow. */
+  accent: string;
+  image: string;
+  imagePosition: string;
+}
+
+function SlideNatureBackdrop({
+  image,
+  imagePosition,
+  overlay,
+  isActive,
+}: {
+  image: string;
+  imagePosition: string;
+  overlay: string;
+  isActive: boolean;
+}) {
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+      <Image
+        src={image}
+        alt=""
+        fill
+        sizes="(max-width: 768px) 100vw, 720px"
+        className={`slide-nature-photo object-cover ${isActive ? "slide-nature-photo-active" : ""}`}
+        style={{ objectPosition: imagePosition }}
+        priority={isActive}
+      />
+      <div
+        className="absolute inset-0 opacity-[0.78]"
+        style={{ background: overlay }}
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-black/15" />
+    </div>
+  );
 }
 
 function getStatus(logged: number, required: number) {
   if (logged >= required) {
-    return { label: "Complete", className: "bg-success/15 text-success" };
+    return {
+      label: "Complete",
+      className: "border-[#9fe5ae]/50 bg-[#9fe5ae]/10 text-[#9fe5ae]",
+    };
   }
   if (logged >= required * 0.6) {
-    return { label: "On track", className: "bg-white/60 text-icon-sky" };
+    return {
+      label: "On track",
+      className: "border-cream/35 bg-cream/5 text-cream/80",
+    };
   }
-  return { label: "Behind", className: "bg-white/60 text-flagged" };
+  return {
+    label: "Behind",
+    className: "border-[#ffb39c]/50 bg-[#ffb39c]/10 text-[#ffb39c]",
+  };
 }
 
-function CategoryRows({
-  verifiedByCategory,
-  categoryGoals,
+function SlideProgress({
+  pct,
+  remaining,
+  accent,
+  barColor,
 }: {
-  verifiedByCategory: Record<CategoryKey, number>;
-  categoryGoals: Record<CategoryKey, number>;
+  pct: number;
+  remaining: number;
+  accent: string;
+  barColor: string;
 }) {
-  return (
-    <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3">
-      {(Object.keys(categoryGoals) as CategoryKey[]).map((key) => {
-        const logged = verifiedByCategory[key];
-        const goal = categoryGoals[key];
-        const pct = Math.round((logged / goal) * 100);
+  const clamped = Math.min(pct, 100);
 
-        return (
-          <div key={key} className="min-w-0">
-            <div className="mb-1 flex items-center justify-between gap-2 text-[11px]">
-              <span className="truncate font-semibold">{categoryLabels[key]}</span>
-              <span className="shrink-0 text-muted">
-                {logged}/{goal}
-              </span>
-            </div>
-            <div className="h-1.5 w-full overflow-hidden rounded-pill bg-white/50">
-              <div
-                className={`h-full rounded-pill ${key === "environment" ? "bg-icon-sky" : key === "education" ? "bg-icon-pink" : "bg-primary"}`}
-                style={{ width: `${Math.min(pct, 100)}%` }}
-              />
-            </div>
-          </div>
-        );
-      })}
+  return (
+    <div className="mt-4 max-w-md">
+      <div className="mb-1.5 flex items-center justify-between font-mono text-[9px] font-semibold uppercase tracking-[0.18em] text-cream/45">
+        <span>Progress</span>
+        <span>{remaining > 0 ? `${remaining} to go` : "Complete"}</span>
+      </div>
+      <div className="relative h-2 rounded-pill bg-cream/10">
+        <div
+          className="absolute inset-y-0 left-0 rounded-pill"
+          style={{
+            width: `${clamped}%`,
+            background: barColor,
+            boxShadow: `0 0 12px ${accent}55`,
+            transition: `width ${TRANSITION_MS}ms ${SPRING_EASING}`,
+          }}
+        />
+        {/* Ruled tick marks — the ledger lines */}
+        {[25, 50, 75].map((tick) => (
+          <span
+            key={tick}
+            className="absolute top-0 h-full w-px bg-black/30"
+            style={{ left: `${tick}%` }}
+          />
+        ))}
+        {clamped > 0 && clamped < 100 ? (
+          <span
+            className="absolute top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-cream shadow-[0_0_8px_rgba(243,239,226,0.7)]"
+            style={{
+              left: `${clamped}%`,
+              transition: `left ${TRANSITION_MS}ms ${SPRING_EASING}`,
+            }}
+          />
+        ) : null}
+      </div>
     </div>
+  );
+}
+
+function SlideStat({
+  logged,
+  required,
+  animate,
+}: {
+  logged: number;
+  required: number;
+  animate: boolean;
+}) {
+  const counted = Math.round(useCountUp(logged, 1100));
+  const shown = animate ? counted : logged;
+
+  return (
+    <p className="font-display text-[56px] font-semibold leading-none tracking-tight text-cream lg:text-[68px]">
+      {shown}
+      <span className="mx-1 font-light text-cream/40">/</span>
+      <span className="text-[0.55em] font-medium text-cream/70">{required}</span>
+    </p>
   );
 }
 
@@ -96,20 +188,22 @@ function RequirementActions() {
       <Link
         href="/log-hours"
         data-no-swipe
-        className="group flex items-center gap-3 rounded-pill bg-ink-button py-2.5 pl-5 pr-2.5 text-[14px] font-semibold text-white transition hover:bg-black"
+        className="group flex items-center gap-3 rounded-pill bg-cream py-2.5 pl-5 pr-2.5 text-[14px] font-semibold text-ink transition hover:bg-white active:scale-[0.98]"
       >
         Log Hours
-        <span className="grid h-7 w-7 place-items-center rounded-full bg-white text-ink transition group-hover:translate-x-0.5">
+        <span className="grid h-7 w-7 place-items-center rounded-full bg-ink text-cream transition group-hover:translate-x-0.5">
           <Plus size={15} strokeWidth={2.5} />
         </span>
       </Link>
       <Link
         href="/events"
         data-no-swipe
-        className="flex items-center gap-2 rounded-pill bg-white/70 px-5 py-2.5 text-[14px] font-semibold text-ink backdrop-blur transition hover:bg-white"
+        className="group flex items-center gap-3 rounded-pill bg-cream/10 py-2.5 pl-5 pr-2.5 text-[14px] font-semibold text-cream transition hover:bg-cream/20 active:scale-[0.98]"
       >
         Find Events
-        <ArrowRight size={15} strokeWidth={2.5} />
+        <span className="grid h-7 w-7 place-items-center rounded-full bg-cream/15 transition group-hover:translate-x-0.5">
+          <ArrowRight size={14} strokeWidth={2.5} />
+        </span>
       </Link>
     </div>
   );
@@ -117,19 +211,9 @@ function RequirementActions() {
 
 export function RequirementsCarousel() {
   const state = student.schoolState;
-  const graduationRequired = getGraduationRequirement(state);
+  const { progress } = useHours();
+  const { graduationRequired, verifiedHours } = progress;
   const brightFutures = getBrightFuturesTiers(state);
-  const categoryGoals = getCategoryGoals(state);
-  const verifiedHours = getVerifiedHours(hoursLog);
-  const verifiedByCategory = getVerifiedHoursByCategory(hoursLog);
-  const totalCategoryGoal = Object.values(categoryGoals).reduce(
-    (sum, goal) => sum + goal,
-    0,
-  );
-  const totalCategoryLogged = Object.values(verifiedByCategory).reduce(
-    (sum, hours) => sum + hours,
-    0,
-  );
 
   const slides = useMemo<RequirementSlide[]>(() => {
     const eyebrow = brightFutures
@@ -141,9 +225,16 @@ export function RequirementsCarousel() {
         id: "graduation",
         eyebrow,
         title: `You're ${verifiedHours} of ${graduationRequired} hours toward graduation`,
+        label: "verified hours toward graduation",
+        meta: "Req · Graduation",
         logged: verifiedHours,
         required: graduationRequired,
-        background: "linear-gradient(135deg, #F3F2EE 0%, #E8E6E0 100%)",
+        background:
+          "radial-gradient(110% 160% at 88% -30%, rgba(11, 143, 136, 0.5), transparent 56%), radial-gradient(90% 120% at -10% 120%, rgba(255, 107, 61, 0.12), transparent 50%), #152420",
+        barColor: "linear-gradient(90deg, #0b8f88, #2bd4c4)",
+        accent: "#2bd4c4",
+        image: SLIDE_NATURE.graduation.src,
+        imagePosition: SLIDE_NATURE.graduation.position,
       },
     ];
 
@@ -153,39 +244,37 @@ export function RequirementsCarousel() {
           id: "silver",
           eyebrow,
           title: `You're ${verifiedHours} of ${brightFutures.silver} hours toward Silver`,
+          label: "hours toward Bright Futures Silver",
+          meta: "Tier · Silver",
           logged: verifiedHours,
           required: brightFutures.silver,
-          background: "linear-gradient(135deg, #ECEFF3 0%, #C5CED8 100%)",
+          background:
+            "radial-gradient(110% 160% at 88% -30%, rgba(148, 163, 184, 0.36), transparent 56%), radial-gradient(90% 120% at -10% 120%, rgba(62, 149, 196, 0.1), transparent 50%), #1b2230",
+          barColor: "linear-gradient(90deg, #8b98ab, #cdd6e2)",
+          accent: "#cdd6e2",
+          image: SLIDE_NATURE.silver.src,
+          imagePosition: SLIDE_NATURE.silver.position,
         },
         {
           id: "gold",
           eyebrow,
           title: `You're ${verifiedHours} of ${brightFutures.gold} hours toward Gold`,
+          label: "hours toward Bright Futures Gold",
+          meta: "Tier · Gold",
           logged: verifiedHours,
           required: brightFutures.gold,
-          background: "linear-gradient(135deg, #FFF8E7 0%, #FFD87A 100%)",
+          background:
+            "radial-gradient(110% 160% at 88% -30%, rgba(232, 169, 61, 0.34), transparent 56%), radial-gradient(90% 120% at -10% 120%, rgba(255, 107, 61, 0.1), transparent 50%), #241c12",
+          barColor: "linear-gradient(90deg, #c98f2c, #f0c668)",
+          accent: "#f0c668",
+          image: SLIDE_NATURE.gold.src,
+          imagePosition: SLIDE_NATURE.gold.position,
         },
       );
     }
 
-    base.push({
-      id: "categories",
-      eyebrow,
-      title: "Category breakdown by service type",
-      logged: totalCategoryLogged,
-      required: totalCategoryGoal,
-      background:
-        "linear-gradient(135deg, #DDF0FB 0%, rgba(0, 196, 204, 0.28) 100%)",
-    });
-
     return base;
-  }, [
-    brightFutures,
-    graduationRequired,
-    totalCategoryGoal,
-    totalCategoryLogged,
-    verifiedHours,
-  ]);
+  }, [brightFutures, graduationRequired, verifiedHours]);
 
   const [activeIndex, setActiveIndex] = useState(0);
   const [dragOffset, setDragOffset] = useState(0);
@@ -351,6 +440,13 @@ export function RequirementsCarousel() {
     endDrag(event.clientX);
   };
 
+  const handleSpotlight = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const node = event.currentTarget;
+    const rect = node.getBoundingClientRect();
+    node.style.setProperty("--spot-x", `${event.clientX - rect.left}px`);
+    node.style.setProperty("--spot-y", `${event.clientY - rect.top}px`);
+  };
+
   const handlePointerCancel = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (!isDragging) {
       return;
@@ -410,12 +506,13 @@ export function RequirementsCarousel() {
     <section className="relative mb-6">
       <div
         ref={containerRef}
-        className={`relative overflow-hidden rounded-card shadow-raised touch-pan-y ${
+        className={`relative overflow-hidden rounded-card shadow-panel touch-pan-y ${
           isDragging ? "cursor-grabbing" : "cursor-grab"
         }`}
         style={{ touchAction: "pan-y" }}
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
+        onMouseMove={handleSpotlight}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
@@ -429,7 +526,7 @@ export function RequirementsCarousel() {
             data-no-swipe
             onClick={goPrev}
             aria-label="Previous requirement"
-            className="pointer-events-auto grid h-8 w-8 cursor-pointer place-items-center rounded-full bg-white/80 text-ink shadow-card backdrop-blur transition hover:text-primary"
+            className="pointer-events-auto grid h-8 w-8 cursor-pointer place-items-center rounded-full bg-cream/10 text-cream backdrop-blur transition hover:bg-cream/20"
           >
             <ChevronLeft size={16} strokeWidth={2.5} />
           </button>
@@ -438,7 +535,7 @@ export function RequirementsCarousel() {
             data-no-swipe
             onClick={goNext}
             aria-label="Next requirement"
-            className="pointer-events-auto grid h-8 w-8 cursor-pointer place-items-center rounded-full bg-primary text-white shadow-card transition hover:bg-primary-deep"
+            className="pointer-events-auto grid h-8 w-8 cursor-pointer place-items-center rounded-full bg-cream text-ink shadow-card transition hover:bg-white"
           >
             <ChevronRight size={16} strokeWidth={2.5} />
           </button>
@@ -454,6 +551,10 @@ export function RequirementsCarousel() {
           }}
         >
           {slides.map((slide, index) => {
+            if (index !== activeIndex) {
+              return null;
+            }
+
             const status = getStatus(slide.logged, slide.required);
             const pct = Math.round((slide.logged / slide.required) * 100);
             const isActive = index === activeIndex;
@@ -462,69 +563,129 @@ export function RequirementsCarousel() {
             return (
               <article
                 key={slide.id}
-                className="w-full shrink-0 px-10 py-9 pb-12"
-                style={{ background: slide.background }}
+                className="relative flex w-full shrink-0 flex-col overflow-hidden bg-panel px-8 pb-5 pt-8 sm:px-10"
                 aria-hidden={!isActive}
+                aria-label={slide.title}
               >
+                <SlideNatureBackdrop
+                  image={slide.image}
+                  imagePosition={slide.imagePosition}
+                  overlay={slide.background}
+                  isActive={isActive}
+                />
+
+                {/* Interactive ambience — drifting glow, ledger ruling,
+                    cursor spotlight, and grain, all keyed to the accent */}
+                <div aria-hidden className="pointer-events-none absolute inset-0 z-[1]">
+                  <div
+                    className="slide-aurora absolute -inset-[25%]"
+                    style={{
+                      background: `radial-gradient(42% 52% at 82% 4%, ${slide.accent}2e, transparent 62%)`,
+                    }}
+                  />
+                  <div
+                    className="slide-aurora absolute -inset-[25%]"
+                    style={{
+                      background: `radial-gradient(46% 56% at 8% 96%, ${slide.accent}1a, transparent 60%)`,
+                      animationDelay: "-8s",
+                      animationDuration: "20s",
+                    }}
+                  />
+                  <div className="slide-rule absolute inset-0" />
+                  <div
+                    className="slide-spotlight absolute inset-0"
+                    style={{
+                      background: `radial-gradient(280px circle at var(--spot-x, 50%) var(--spot-y, -20%), ${slide.accent}24, transparent 68%)`,
+                    }}
+                  />
+                  <div className="slide-grain absolute inset-0" />
+                </div>
+
+                {/* Oversized watermark numeral — printed-ledger texture */}
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute -bottom-12 right-4 z-[1] select-none font-display text-[180px] font-bold italic leading-none text-cream/[0.04]"
+                >
+                  {slide.required}
+                </span>
+
                 <div
-                  className={`flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6 ${
+                  className={`relative z-10 flex flex-1 flex-col gap-4 sm:flex-row sm:items-center sm:gap-8 ${
                     isActive && !isDragging ? "requirement-card-active" : ""
                   }`}
                 >
-                  <div className="min-w-0 flex-1 pr-16">
-                    <p className="mb-3 text-[12px] font-semibold uppercase tracking-[0.18em] text-muted">
-                      {slide.eyebrow}
-                    </p>
-
-                    <div className="mb-2 flex flex-wrap items-center gap-2">
-                      <h3 className="max-w-xl text-[28px] font-extrabold leading-[1.12] text-ink lg:text-[32px]">
-                        {slide.title}
-                      </h3>
+                  <div className="min-w-0 flex-1 sm:pr-4">
+                    <span className="mb-4 inline-flex max-w-full items-center gap-2 rounded-pill bg-cream/5 px-3 py-1 ring-1 ring-cream/15">
                       <span
-                        className={`rounded-pill px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${status.className}`}
+                        className="h-1.5 w-1.5 shrink-0 rounded-full"
+                        style={{
+                          background: slide.accent,
+                          boxShadow: `0 0 6px ${slide.accent}aa`,
+                        }}
+                      />
+                      <span className="truncate font-mono text-[9px] font-semibold uppercase tracking-[0.2em] text-cream/65">
+                        {slide.eyebrow}
+                      </span>
+                    </span>
+
+                    <div className="mb-2 flex flex-wrap items-end gap-3.5">
+                      <SlideStat
+                        key={`${slide.id}-${isActive ? "on" : "off"}`}
+                        logged={slide.logged}
+                        required={slide.required}
+                        animate={isActive}
+                      />
+                      <span
+                        className={`mb-2 inline-block -rotate-2 rounded-[5px] border px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-[0.16em] ${status.className}`}
                       >
                         {status.label}
                       </span>
                     </div>
 
-                    <p className="max-w-md text-[14px] text-muted">
-                      {slide.id === "categories"
-                        ? `${slide.logged} of ${slide.required} category hours logged.`
-                        : remaining > 0
-                          ? `Just ${remaining} more hours to go — only verified hours count.`
-                          : "Requirement complete — great work!"}
+                    <p className="max-w-md text-[14px] text-cream/60">
+                      <span className="font-medium text-cream/85">{slide.label}</span>
                       {brightFutures && slide.id === "graduation"
-                        ? ` Gold: ${brightFutures.gold} hrs · Silver: ${brightFutures.silver} hrs.`
+                        ? ` — Silver at ${brightFutures.silver}, Gold at ${brightFutures.gold}.`
                         : null}
                     </p>
 
-                    <div className="mt-3 h-1.5 max-w-md overflow-hidden rounded-pill bg-white/50">
-                      <div
-                        className="h-full rounded-pill bg-primary"
-                        style={{
-                          width: `${Math.min(pct, 100)}%`,
-                          transition: `width ${TRANSITION_MS}ms ${SPRING_EASING}`,
-                        }}
-                      />
-                    </div>
-
-                    {slide.id === "categories" ? (
-                      <CategoryRows
-                        verifiedByCategory={verifiedByCategory}
-                        categoryGoals={categoryGoals}
-                      />
-                    ) : null}
-
-                    {status.label === "Behind" ? <RequirementActions /> : null}
-                  </div>
-
-                  <div className="hidden shrink-0 sm:block">
-                    <ProgressRing
-                      size="compact"
-                      hoursLogged={slide.logged}
-                      hoursRequired={slide.required}
+                    <SlideProgress
+                      pct={pct}
+                      remaining={remaining}
+                      accent={slide.accent}
+                      barColor={slide.barColor}
                     />
+
+                    <RequirementActions />
                   </div>
+
+                  {/* Nested bezel tile — the ring sits in machined hardware */}
+                  <div className="hidden shrink-0 flex-col items-center gap-2.5 self-center sm:flex">
+                    <div className="rounded-[1.75rem] bg-cream/[0.06] p-2 ring-1 ring-cream/10">
+                      <div className="rounded-[1.25rem] bg-cream/[0.04] p-3 shadow-[inset_0_1px_1px_rgba(255,255,255,0.08)]">
+                        <ProgressRing
+                          size="compact"
+                          tone="dark"
+                          hoursLogged={slide.logged}
+                          hoursRequired={slide.required}
+                        />
+                      </div>
+                    </div>
+                    <p className="font-mono text-[9px] font-semibold uppercase tracking-[0.18em] text-cream/45">
+                      {slide.logged}h verified
+                    </p>
+                  </div>
+                </div>
+
+                {/* Ledger footer — hairline rule + meta stamps */}
+                <div className="relative z-10 mt-6 flex items-center justify-between border-t border-cream/10 pt-3 font-mono text-[9px] font-semibold uppercase tracking-[0.16em] text-cream/40">
+                  <span>
+                    {slide.meta} · {String(index + 1).padStart(2, "0")} /{" "}
+                    {String(slideCount).padStart(2, "0")}
+                  </span>
+                  <span className="hidden sm:inline">
+                    Only verified hours count
+                  </span>
                 </div>
               </article>
             );
@@ -542,8 +703,8 @@ export function RequirementsCarousel() {
               aria-current={slideIndex === activeIndex ? "true" : undefined}
               className={`pointer-events-auto cursor-pointer rounded-pill transition-all duration-300 ${
                 slideIndex === activeIndex
-                  ? "h-2 w-6 bg-primary"
-                  : "h-2 w-2 bg-black/20 hover:bg-primary/50"
+                  ? "h-2 w-6 bg-cream"
+                  : "h-2 w-2 bg-cream/25 hover:bg-cream/60"
               }`}
             />
           ))}

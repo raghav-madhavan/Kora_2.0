@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Search } from "lucide-react";
 import { useMockStore } from "@/lib/mock-store";
 import { OrgCard } from "@/components/student/org-card";
@@ -16,9 +17,17 @@ const categoryOptions: { value: CategoryFilter; label: string }[] = [
 ];
 
 export function OrganizationsPageClient() {
+  const searchParams = useSearchParams();
   const store = useMockStore();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<CategoryFilter>("all");
+
+  useEffect(() => {
+    const query = searchParams.get("q");
+    if (query) {
+      setSearch(query);
+    }
+  }, [searchParams]);
 
   const organizations = store.getOrganizations().filter((org) => org.verified);
 

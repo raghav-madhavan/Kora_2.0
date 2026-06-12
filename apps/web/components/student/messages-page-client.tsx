@@ -2,11 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Pin, Plus, Search, Send, X } from "lucide-react";
+import { Plus, Search, Send, X } from "lucide-react";
 import { PageHeader } from "@/components/student/page-header";
 import {
+  filterThreadsByKind,
   formatMessageTime,
   getLastMessage,
+  getThreadKindLabel,
   getThreadPreviewLabel,
   sortThreadsForInbox,
 } from "@/lib/messages";
@@ -15,16 +17,24 @@ import {
   getModeratorById,
   messageTemplates,
   shifts,
-  student,
 } from "@/lib/mock-data";
 import { useMessagesStore } from "@/lib/mock-messages-store";
 import { useStudentAvatar } from "@/lib/use-student-avatar";
 import { StudentAvatar } from "@/components/student/student-avatar";
 import type {
+  ConversationKind,
   ConversationThread,
   Friend,
   Shift,
 } from "@/lib/types/student";
+
+type InboxFilter = "all" | ConversationKind;
+
+const inboxFilters: { value: InboxFilter; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "moderator", label: "Moderators" },
+  { value: "friend", label: "Friends" },
+];
 
 function ThreadListItem({
   thread,
@@ -35,34 +45,44 @@ function ThreadListItem({
   active: boolean;
   onSelect: () => void;
 }) {
-  const lastMessage = getLastMessage(thread);
+  const lastMessage =
+    thread.messages.length > 0 ? getLastMessage(thread) : null;
+  const timeLabel = lastMessage
+    ? formatMessageTime(lastMessage.sentAt)
+    : formatMessageTime(thread.updatedAt);
 
   return (
     <button
       type="button"
       onClick={onSelect}
-      className={`flex w-full items-start gap-3 border-b border-black/5 px-5 py-4 text-left transition ${
-        active ? "bg-accent-lavender" : "hover:bg-accent-lavender/50"
+      className={`flex w-full items-start gap-3 px-4 py-3.5 text-left transition ${
+        active
+          ? "bg-accent-lavender"
+          : "border-b border-black/5 hover:bg-accent-lavender/40"
       }`}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={thread.contactAvatar}
-        alt=""
-        className="h-11 w-11 shrink-0 rounded-full bg-accent-lavender object-cover"
-      />
+      <div className="relative shrink-0">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={thread.contactAvatar}
+          alt=""
+          className="h-11 w-11 rounded-full bg-accent-lavender object-cover"
+        />
+        {thread.unread ? (
+          <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-surface bg-primary" />
+        ) : null}
+      </div>
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <p className="truncate text-[14px] font-bold">{thread.contactName}</p>
-          {thread.pinned ? (
-            <Pin size={12} className="shrink-0 text-primary" />
-          ) : null}
-          {thread.unread ? (
-            <span className="ml-auto h-2 w-2 shrink-0 rounded-full bg-primary" />
-          ) : null}
+        <div className="flex items-baseline justify-between gap-2">
+          <p
+            className={`truncate text-[14px] ${thread.unread ? "font-bold" : "font-semibold"}`}
+          >
+            {thread.contactName}
+          </p>
+          <span className="shrink-0 text-[11px] text-muted">{timeLabel}</span>
         </div>
         {thread.kind === "moderator" && thread.shiftTitle ? (
-          <p className="mt-0.5 truncate text-[13px] font-semibold text-ink/80">
+          <p className="mt-0.5 truncate text-[12px] font-semibold text-primary">
             {thread.shiftTitle}
           </p>
         ) : (
@@ -70,13 +90,10 @@ function ThreadListItem({
             {thread.contactSubtitle}
           </p>
         )}
-        <p className="mt-1 line-clamp-2 text-[12px] text-muted">
+        <p
+          className={`mt-1 truncate text-[12px] ${thread.unread ? "font-medium text-ink" : "text-muted"}`}
+        >
           {getThreadPreviewLabel(thread)}
-        </p>
-        <p className="mt-1 text-[11px] text-muted">
-          {thread.kind === "moderator" && thread.shiftDate
-            ? thread.shiftDate
-            : formatMessageTime(lastMessage.sentAt)}
         </p>
       </div>
     </button>
@@ -137,14 +154,12 @@ export function MessagesPageClient() {
   const [draft, setDraft] = useState("");
   const [newMessageOpen, setNewMessageOpen] = useState(false);
   const [recipientSearch, setRecipientSearch] = useState("");
+  const [inboxFilter, setInboxFilter] = useState<InboxFilter>("all");
 
-  const sortedThreads = useMemo(
-    () => sortThreadsForInbox(threads),
-    [threads],
-  );
-
-  const pinnedThreads = sortedThreads.filter((thread) => thread.pinned);
-  const recentThreads = sortedThreads.filter((thread) => !thread.pinned);
+  const inboxThreads = useMemo(() => {
+    const sorted = sortThreadsForInbox(threads);
+    return filterThreadsByKind(sorted, inboxFilter);
+  }, [threads, inboxFilter]);
 
   const selectedThread = useMemo(
     () => threads.find((thread) => thread.id === selectedThreadId),
@@ -253,38 +268,33 @@ export function MessagesPageClient() {
       />
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[320px_minmax(0,1fr)]">
-        <div className="overflow-hidden rounded-card bg-surface shadow-card">
-          {pinnedThreads.length > 0 ? (
-            <>
-              <div className="border-b border-black/5 px-5 py-4">
-                <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-muted">
-                  Pinned
-                </p>
-              </div>
-              {pinnedThreads.map((thread) => (
-                <ThreadListItem
-                  key={thread.id}
-                  thread={thread}
-                  active={thread.id === selectedThreadId}
-                  onSelect={() => handleSelectThread(thread.id)}
-                />
-              ))}
-            </>
-          ) : null}
-
-          <div className="border-b border-black/5 px-5 py-4">
-            <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-muted">
-              Recent
-            </p>
+        <div className="flex flex-col overflow-hidden rounded-card bg-surface shadow-card">
+          <div className="flex gap-1 border-b border-black/5 p-2">
+            {inboxFilters.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setInboxFilter(option.value)}
+                className={`flex-1 rounded-pill py-2 text-[12px] font-semibold transition ${
+                  inboxFilter === option.value
+                    ? "bg-primary text-white"
+                    : "text-muted hover:bg-accent-lavender hover:text-ink"
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
           </div>
 
-          <div className="max-h-[540px] overflow-y-auto">
-            {recentThreads.length === 0 ? (
-              <p className="px-5 py-8 text-center text-[13px] text-muted">
-                No recent conversations.
+          <div className="max-h-[580px] overflow-y-auto">
+            {inboxThreads.length === 0 ? (
+              <p className="px-5 py-10 text-center text-[13px] text-muted">
+                {inboxFilter === "all"
+                  ? "No conversations yet. Start a new message."
+                  : `No ${getThreadKindLabel(inboxFilter).toLowerCase()} conversations.`}
               </p>
             ) : (
-              recentThreads.map((thread) => (
+              inboxThreads.map((thread) => (
                 <ThreadListItem
                   key={thread.id}
                   thread={thread}
