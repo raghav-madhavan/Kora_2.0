@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { ArrowUpRight, CalendarDays, MessageSquare, QrCode } from "lucide-react";
+import { useModeratorSession } from "@/components/moderator/session-provider";
+import { isModeratorPathAllowed } from "@/lib/auth/policy";
 import {
   formatMessageTime,
   getOrgPopupThreads,
@@ -11,7 +13,9 @@ import { useModeratorMessagesStore } from "@/lib/mock-messages-store-moderator";
 import type { ModeratorShift } from "@/lib/types/moderator";
 
 export function ShiftsSidebar({ shifts }: { shifts: ModeratorShift[] }) {
+  const { session } = useModeratorSession();
   const { threads } = useModeratorMessagesStore();
+  const canMessage = isModeratorPathAllowed(session, "/moderator/messages");
   const upcoming = shifts.filter((s) => s.status === "upcoming");
   const completed = shifts.filter((s) => s.status === "completed");
   const nextShift = [...upcoming].sort(
@@ -65,6 +69,7 @@ export function ShiftsSidebar({ shifts }: { shifts: ModeratorShift[] }) {
         ) : null}
       </div>
 
+      {canMessage ? (
       <div className="rounded-card bg-surface p-5 shadow-card">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="font-display text-[18px] font-semibold tracking-tight">
@@ -126,6 +131,7 @@ export function ShiftsSidebar({ shifts }: { shifts: ModeratorShift[] }) {
           Open inbox
         </Link>
       </div>
+      ) : null}
     </aside>
   );
 }

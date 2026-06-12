@@ -4,9 +4,11 @@ import { useCallback, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { AlertTriangle, BadgeCheck, Inbox, Search } from "lucide-react";
 import { useOrgLogs } from "@/components/moderator/org-logs-provider";
+import { useModeratorSession } from "@/components/moderator/session-provider";
 import { VerificationRow } from "@/components/moderator/verification-row";
 import { EmptyState } from "@/components/shared/empty-state";
 import { FilterChip } from "@/components/shared/filter-chip";
+import { scopeShifts } from "@/lib/auth/scope";
 import { moderatorShifts } from "@/lib/mock-data-moderator";
 import {
   filterOrgLogs,
@@ -16,6 +18,11 @@ import {
 
 export function VerificationsPageClient() {
   const { logs, pendingCount, flaggedCount } = useOrgLogs();
+  const { session } = useModeratorSession();
+  const accessibleShifts = useMemo(
+    () => scopeShifts(session, moderatorShifts),
+    [session],
+  );
   const params = useSearchParams();
   const [tab, setTab] = useState<VerificationTab>(() =>
     toVerificationTab(params.get("status")),
@@ -23,7 +30,7 @@ export function VerificationsPageClient() {
   const [q, setQ] = useState(() => params.get("q") ?? "");
   const [shiftId, setShiftId] = useState(() => {
     const raw = params.get("shift");
-    return raw && moderatorShifts.some((s) => s.id === raw) ? raw : "";
+    return raw && accessibleShifts.some((s) => s.id === raw) ? raw : "";
   });
 
   const syncUrl = useCallback(
@@ -142,7 +149,7 @@ export function VerificationsPageClient() {
             className="w-full rounded-pill bg-surface px-4 py-2.5 text-[14px] font-semibold shadow-card outline-none ring-primary/40 focus:ring-2 sm:w-auto"
           >
             <option value="">All shifts</option>
-            {moderatorShifts.map((shift) => (
+            {accessibleShifts.map((shift) => (
               <option key={shift.id} value={shift.id}>
                 {shift.title}
               </option>
