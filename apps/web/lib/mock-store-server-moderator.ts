@@ -1,6 +1,12 @@
+import {
+  assertShiftAccess,
+  canAccessShift,
+  scopeLogs,
+  scopeShifts,
+} from "@/lib/auth/scope";
+import type { ModeratorSession } from "@/lib/auth/session";
 import { syncOrgDecisionToStudent } from "@/lib/hours-sync";
 import {
-  currentModerator,
   moderatorShifts,
   orgShiftLogs as seedLogs,
 } from "@/lib/mock-data-moderator";
@@ -9,19 +15,31 @@ import {
   refreshShiftQrSession,
   type ShiftQrSession,
 } from "@/lib/mock-store-server";
-import type { OrgShiftLog } from "@/lib/types/moderator";
+import type { ModeratorShift, OrgShiftLog } from "@/lib/types/moderator";
 
 let orgLogs: OrgShiftLog[] = [...seedLogs];
 
-export function getOrgLogs(): OrgShiftLog[] {
-  return [...orgLogs].sort(
+export function getOrgLogs(session: ModeratorSession): OrgShiftLog[] {
+  return scopeLogs(session, orgLogs).sort(
     (a, b) =>
       new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime(),
   );
 }
 
-export function getOrgLogById(logId: string): OrgShiftLog | undefined {
-  return getOrgLogs().find((log) => log.id === logId);
+export function getOrgLogById(
+  session: ModeratorSession,
+  logId: string,
+): OrgShiftLog | undefined {
+  const log = orgLogs.find((l) => l.id === logId);
+  // Out-of-scope reads as "does not exist" — probing ids leaks nothing.
+  if (!log || !canAccessShift(session, log.shiftId)) return undefined;
+  return log;
+}
+
+export function getModeratorShifts(
+  session: ModeratorSession,
+): ModeratorShift[] {
+  return scopeShifts(session, moderatorShifts);
 }
 
 export function createOrgLogFromScan(orgLog: OrgShiftLog): OrgShiftLog {
@@ -33,11 +51,23 @@ export function createOrgLogFromScan(orgLog: OrgShiftLog): OrgShiftLog {
   return orgLog;
 }
 
-export function approveOrgLog(logId: string): OrgShiftLog {
+function findAccessibleLog(
+  session: ModeratorSession,
+  logId: string,
+): OrgShiftLog {
   const log = orgLogs.find((l) => l.id === logId);
   if (!log) {
     throw new Error("Log not found. It may have been removed.");
   }
+  assertShiftAccess(session, log.shiftId);
+  return log;
+}
+
+export function approveOrgLog(
+  session: ModeratorSession,
+  logId: string,
+): OrgShiftLog {
+  const log = findAccessibleLog(session, logId);
   if (log.status === "verified") {
     throw new Error("These hours are already verified.");
   }
@@ -46,7 +76,7 @@ export function approveOrgLog(logId: string): OrgShiftLog {
     ...log,
     status: "verified",
     verifiedAt: new Date().toISOString(),
-    verifiedByModeratorId: currentModerator.id,
+    verifiedByModeratorId: session.userId,
     rejectReason: undefined,
   };
   orgLogs = orgLogs.map((l) => (l.id === logId ? updated : l));
@@ -54,11 +84,12 @@ export function approveOrgLog(logId: string): OrgShiftLog {
   return updated;
 }
 
-export function rejectOrgLog(logId: string, reason?: string): OrgShiftLog {
-  const log = orgLogs.find((l) => l.id === logId);
-  if (!log) {
-    throw new Error("Log not found. It may have been removed.");
-  }
+export function rejectOrgLog(
+  session: ModeratorSession,
+  logId: string,
+  reason?: string,
+): OrgShiftLog {
+  const log = findAccessibleLog(session, logId);
 
   const updated: OrgShiftLog = {
     ...log,
@@ -72,19 +103,26 @@ export function rejectOrgLog(logId: string, reason?: string): OrgShiftLog {
   return updated;
 }
 
-/** Tokens may only be issued for this moderator's org shifts. */
-function assertOrgShift(shiftId: string): void {
+/** QR tokens: shift must be the org's AND within the session's access. */
+function assertQrAccess(session: ModeratorSession, shiftId: string): void {
   if (!moderatorShifts.some((shift) => shift.id === shiftId)) {
     throw new Error("This shift does not belong to your organization.");
   }
+  assertShiftAccess(session, shiftId);
 }
 
-export function getModeratorQrSession(shiftId: string): ShiftQrSession {
-  assertOrgShift(shiftId);
+export function getModeratorQrSession(
+  session: ModeratorSession,
+  shiftId: string,
+): ShiftQrSession {
+  assertQrAccess(session, shiftId);
   return ensureShiftQrSession(shiftId);
 }
 
-export function refreshModeratorQrSession(shiftId: string): ShiftQrSession {
-  assertOrgShift(shiftId);
+export function refreshModeratorQrSession(
+  session: ModeratorSession,
+  shiftId: string,
+): ShiftQrSession {
+  assertQrAccess(session, shiftId);
   return refreshShiftQrSession(shiftId);
 }

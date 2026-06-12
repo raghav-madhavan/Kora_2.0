@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { requireModerator } from "@/lib/auth/guards";
 import {
   approveOrgLog,
   rejectOrgLog,
@@ -22,7 +23,8 @@ function revalidateModeratorDecisionPaths(logId: string, orgLog: OrgShiftLog): v
 }
 
 export async function approveLog(logId: string): Promise<OrgShiftLog> {
-  const updated = approveOrgLog(logId);
+  const session = await requireModerator();
+  const updated = approveOrgLog(session, logId);
   revalidateModeratorDecisionPaths(logId, updated);
   return updated;
 }
@@ -31,7 +33,8 @@ export async function rejectLog(
   logId: string,
   reason?: string,
 ): Promise<OrgShiftLog> {
-  const updated = rejectOrgLog(logId, reason);
+  const session = await requireModerator();
+  const updated = rejectOrgLog(session, logId, reason);
   revalidateModeratorDecisionPaths(logId, updated);
   return updated;
 }
