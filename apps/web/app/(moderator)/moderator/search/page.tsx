@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { PageShell } from "@/components/moderator/page-shell";
 import { SearchPageClient } from "@/components/moderator/search-page-client";
+import { requireMacro } from "@/lib/auth/guards";
 
 function SearchFallback() {
   return (
@@ -12,7 +13,9 @@ function SearchFallback() {
   );
 }
 
-export default function ModeratorSearchPage() {
+export default async function ModeratorSearchPage() {
+  await requireMacro();
+
   return (
     <PageShell>
       <Suspense fallback={<SearchFallback />}>

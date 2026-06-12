@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import { PageShell } from "@/components/moderator/page-shell";
 import { VerificationDetail } from "@/components/moderator/verification-detail";
-import { getOrgLogs } from "@/lib/mock-store-server-moderator";
+import { requireModerator } from "@/lib/auth/guards";
+import { getOrgLogById } from "@/lib/mock-store-server-moderator";
 
 interface VerificationDetailPageProps {
   params: Promise<{ logId: string }>;
@@ -10,8 +11,9 @@ interface VerificationDetailPageProps {
 export default async function VerificationDetailPage({
   params,
 }: VerificationDetailPageProps) {
+  const session = await requireModerator();
   const { logId } = await params;
-  const log = getOrgLogs().find((l) => l.id === logId);
+  const log = getOrgLogById(session, logId);
 
   if (!log) {
     notFound();
