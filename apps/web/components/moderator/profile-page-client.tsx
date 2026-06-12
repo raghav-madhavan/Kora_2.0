@@ -1,5 +1,6 @@
 "use client";
 
+import { signOut } from "@/app/login/actions";
 import { useEffect, useState } from "react";
 import { BadgeCheck, Clock3, LogOut, ShieldCheck } from "lucide-react";
 import { useOrgLogs } from "@/components/moderator/org-logs-provider";
@@ -112,14 +113,15 @@ export function ProfilePageClient() {
           </div>
 
           <div className="mt-6 border-t border-black/5 pt-4">
-            <button
-              type="button"
-              onClick={() => toast.success("Sign-in coming soon")}
-              className="flex items-center gap-2 rounded-pill px-4 py-2 text-[14px] font-semibold text-danger transition hover:bg-danger/10"
-            >
-              <LogOut size={16} strokeWidth={2.2} />
-              Logout
-            </button>
+            <form action={signOut}>
+              <button
+                type="submit"
+                className="flex items-center gap-2 rounded-pill px-4 py-2 text-[14px] font-semibold text-danger transition hover:bg-danger/10"
+              >
+                <LogOut size={16} strokeWidth={2.2} />
+                Logout
+              </button>
+            </form>
           </div>
         </section>
 

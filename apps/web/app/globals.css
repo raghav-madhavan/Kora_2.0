@@ -83,15 +83,20 @@ body {
   font-family: var(--font-sans);
 }
 
-/* Paper grain over everything — the canvas should feel printed, not painted */
+/* Paper grain — lightweight dot pattern (no SVG filters; those freeze low-RAM GPUs) */
 body::after {
   content: "";
   position: fixed;
   inset: 0;
   z-index: 2000;
   pointer-events: none;
-  opacity: 0.3;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='linear' slope='0.05'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: 0.22;
+  background-image: radial-gradient(
+    circle at center,
+    rgba(26, 25, 21, 0.045) 0.6px,
+    transparent 0.6px
+  );
+  background-size: 4px 4px;
 }
 
 ::selection {
@@ -218,24 +223,8 @@ a svg,
    Layered atmosphere for the dark hero slides: a slowly drifting accent
    glow, faint ledger ruling, and paper grain — same printed-ledger
    language as the rest of the canvas, but alive. */
-@keyframes slide-aurora {
-  0% {
-    transform: translate3d(0, 0, 0) scale(1);
-    opacity: 0.75;
-  }
-  50% {
-    transform: translate3d(-4%, 3%, 0) scale(1.12);
-    opacity: 1;
-  }
-  100% {
-    transform: translate3d(0, 0, 0) scale(1);
-    opacity: 0.75;
-  }
-}
-
 .slide-aurora {
-  animation: slide-aurora 16s var(--ease-soft) infinite;
-  will-change: transform, opacity;
+  opacity: 0.85;
 }
 
 /* Hairline ruling — the ledger lines, faint over the dark panel */
@@ -250,35 +239,34 @@ a svg,
   mask-image: linear-gradient(180deg, transparent, #000 18%, #000 82%, transparent);
 }
 
-/* Grain overlay matched to the body texture, tuned for dark surfaces */
+/* Subtle grain on dark slides — static dots, no feTurbulence */
 .slide-grain {
-  opacity: 0.5;
-  mix-blend-mode: soft-light;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='linear' slope='0.08'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-}
-
-/* Cursor-tracked spotlight — eased toward the pointer for an interactive feel */
-.slide-spotlight {
-  transition: background-position 240ms var(--ease-soft);
-}
-
-/* Slow Ken Burns drift on the active slide's nature photo — subtle, not distracting */
-@keyframes slide-nature-drift {
-  0% {
-    transform: scale(1.06) translate3d(0, 0, 0);
-  }
-  100% {
-    transform: scale(1.12) translate3d(-1.2%, 0.8%, 0);
-  }
+  opacity: 0.35;
+  background-image: radial-gradient(
+    circle at center,
+    rgba(243, 239, 226, 0.06) 0.5px,
+    transparent 0.5px
+  );
+  background-size: 3px 3px;
 }
 
 .slide-nature-photo {
   opacity: 0.58;
-  will-change: transform;
+  transform: scale(1.06);
 }
 
-.slide-nature-photo-active {
-  animation: slide-nature-drift 28s var(--ease-soft) infinite alternate;
+/* Login persona rows — spec §6: hover lift gated to fine pointers, 160ms ease-soft */
+.login-persona-btn {
+  transition:
+    transform 160ms var(--ease-soft),
+    box-shadow 160ms var(--ease-soft);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .login-persona-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-raised);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -288,5 +276,15 @@ a svg,
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+
+  .animate-rise,
+  .stagger > * {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .login-persona-btn:hover:not(:disabled) {
+    transform: none;
   }
 }

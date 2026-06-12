@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useSyncExternalStore } from "react";
 import type { ShiftLog } from "@/lib/types/student";
 
 const STORAGE_KEY = "kora-hours-store-v1";
@@ -59,16 +59,16 @@ function emitChange(): void {
   listeners.forEach((listener) => listener());
 }
 
-function ensureHydrated(): void {
+function hydrateFromStorage(): void {
   if (hydrated || typeof window === "undefined") {
     return;
   }
-  state = loadState();
   hydrated = true;
+  state = loadState();
+  emitChange();
 }
 
 function getSnapshot(): HoursState {
-  ensureHydrated();
   return state;
 }
 
@@ -88,6 +88,10 @@ function persist(next: HoursState): void {
 }
 
 export function useHoursStore() {
+  useEffect(() => {
+    hydrateFromStorage();
+  }, []);
+
   const hoursState = useSyncExternalStore(
     subscribe,
     getSnapshot,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useSyncExternalStore } from "react";
 import { appNotifications as seedNotifications } from "@/lib/mock-data";
 import type { AppNotification } from "@/lib/types/student";
 
@@ -70,17 +70,35 @@ function emitChange(): void {
   listeners.forEach((listener) => listener());
 }
 
-function ensureHydrated(): void {
+function hydrateFromStorage(): void {
   if (hydrated || typeof window === "undefined") {
     return;
   }
-  notifications = loadNotifications();
   hydrated = true;
+  notifications = loadNotifications();
+  cachedSnapshot = null;
+  cachedLocal = null;
+  cachedServer = null;
+  emitChange();
 }
 
+// useSyncExternalStore requires a referentially stable snapshot between
+// emits — recomputing the merge on every call causes an infinite render loop.
+let cachedSnapshot: AppNotification[] | null = null;
+let cachedLocal: AppNotification[] | null = null;
+let cachedServer: AppNotification[] | null = null;
+
 function getSnapshot(): AppNotification[] {
-  ensureHydrated();
-  return mergeNotifications(notifications, serverNotifications);
+  if (
+    cachedSnapshot === null ||
+    cachedLocal !== notifications ||
+    cachedServer !== serverNotifications
+  ) {
+    cachedLocal = notifications;
+    cachedServer = serverNotifications;
+    cachedSnapshot = mergeNotifications(notifications, serverNotifications);
+  }
+  return cachedSnapshot;
 }
 
 function getServerSnapshot(): AppNotification[] {
@@ -99,6 +117,10 @@ function persist(next: AppNotification[]): void {
 }
 
 export function useNotificationsStore() {
+  useEffect(() => {
+    hydrateFromStorage();
+  }, []);
+
   const notificationList = useSyncExternalStore(
     subscribe,
     getSnapshot,

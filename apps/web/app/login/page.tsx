@@ -13,7 +13,7 @@ export default function LoginPage() {
   );
 
   return (
-    <main className="flex min-h-screen flex-col bg-canvas text-ink lg:flex-row">
+    <main className="flex min-h-dvh flex-col bg-canvas text-ink lg:flex-row">
       <section className="flex items-end bg-panel px-8 pb-8 pt-10 lg:w-[40%] lg:px-12 lg:pb-14">
         <div>
           <p className="font-display text-[34px] font-semibold italic tracking-tight text-cream">

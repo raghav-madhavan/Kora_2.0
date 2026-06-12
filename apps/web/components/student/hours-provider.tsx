@@ -38,10 +38,13 @@ export function HoursProvider({
   const progress = useMemo(() => getProgressSnapshot(logs), [logs]);
   const categoryGaps = useMemo(() => getCategoryGaps(progress), [progress]);
 
+  const value = useMemo(
+    () => ({ logs, progress, categoryGaps, appendLog, upsertLog }),
+    [logs, progress, categoryGaps, appendLog, upsertLog],
+  );
+
   return (
-    <HoursContext.Provider value={{ logs, progress, categoryGaps, appendLog, upsertLog }}>
-      {children}
-    </HoursContext.Provider>
+    <HoursContext.Provider value={value}>{children}</HoursContext.Provider>
   );
 }
 

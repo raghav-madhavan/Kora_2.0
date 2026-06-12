@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useSyncExternalStore } from "react";
 import type { OrgShiftLog } from "@/lib/types/moderator";
 
 const STORAGE_KEY = "kora-org-logs-store-v1";
@@ -61,16 +61,16 @@ function emitChange(): void {
   listeners.forEach((listener) => listener());
 }
 
-function ensureHydrated(): void {
+function hydrateFromStorage(): void {
   if (hydrated || typeof window === "undefined") {
     return;
   }
-  state = loadState();
   hydrated = true;
+  state = loadState();
+  emitChange();
 }
 
 function getSnapshot(): OrgLogsState {
-  ensureHydrated();
   return state;
 }
 
@@ -90,6 +90,10 @@ function persist(next: OrgLogsState): void {
 }
 
 export function useOrgLogsStore() {
+  useEffect(() => {
+    hydrateFromStorage();
+  }, []);
+
   const logsState = useSyncExternalStore(
     subscribe,
     getSnapshot,

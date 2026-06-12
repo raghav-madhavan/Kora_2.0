@@ -1,4 +1,4 @@
-# Kora Org Portal — Macro/Micro Access Levels & Mock Auth
+  # Kora Org Portal — Macro/Micro Access Levels & Mock Auth
 
 **Date:** 2026-06-12
 **Scope:** `apps/web` — App Router auth architecture: session model, `/login` page,

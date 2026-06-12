@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useSyncExternalStore } from "react";
 import { DEFAULT_AVATAR_CONFIG, normalizeAvatarConfig } from "@/lib/avatar";
 import { student } from "@/lib/mock-data";
 import type { AvatarConfig } from "@/lib/types/student";
@@ -66,16 +66,16 @@ function emitChange(): void {
   listeners.forEach((listener) => listener());
 }
 
-function ensureHydrated(): void {
+function hydrateFromStorage(): void {
   if (hydrated || typeof window === "undefined") {
     return;
   }
-  state = loadState();
   hydrated = true;
+  state = loadState();
+  emitChange();
 }
 
 function getSnapshot(): ProfileState {
-  ensureHydrated();
   return state;
 }
 
@@ -95,6 +95,10 @@ function persist(next: ProfileState): void {
 }
 
 export function useProfileStore() {
+  useEffect(() => {
+    hydrateFromStorage();
+  }, []);
+
   const profile = useSyncExternalStore(
     subscribe,
     getSnapshot,

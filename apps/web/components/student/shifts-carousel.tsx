@@ -85,7 +85,9 @@ export function ShiftsCarousel() {
                     fill
                     className="object-cover"
                     sizes="300px"
+                    quality={65}
                     priority={index === 0}
+                    loading={index === 0 ? "eager" : "lazy"}
                   />
                 </Link>
                 <button

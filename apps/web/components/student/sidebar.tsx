@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { User, LogOut, PanelLeftClose, PanelLeft } from "lucide-react";
+import { signOut } from "@/app/login/actions";
 import { SidebarNav } from "@/components/student/sidebar-nav";
-import { useToast } from "@/components/student/toast-provider";
 
 const STORAGE_KEY = "kora-sidebar-collapsed";
 
@@ -40,7 +40,6 @@ function SectionLabel({
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const toast = useToast();
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -150,21 +149,22 @@ export function Sidebar() {
             Profile
           </span>
         </Link>
-        <button
-          type="button"
-          title={collapsed ? "Logout" : undefined}
-          onClick={() => toast.success("Sign-in coming soon")}
-          className={`flex w-full items-center rounded-chip py-2.5 text-[15px] font-semibold text-danger transition-all ${SIDEBAR_EASE} hover:bg-danger/10 ${
-            collapsed ? "justify-center px-2.5" : "gap-3 px-3"
-          }`}
-        >
-          <LogOut size={20} strokeWidth={2.2} className="shrink-0" />
-          <span
-            className={`inline-block overflow-hidden whitespace-nowrap transition-[max-width,opacity] ${sidebarFade(collapsed)}`}
+        <form action={signOut}>
+          <button
+            type="submit"
+            title={collapsed ? "Logout" : undefined}
+            className={`flex w-full items-center rounded-chip py-2.5 text-[15px] font-semibold text-danger transition-all ${SIDEBAR_EASE} hover:bg-danger/10 ${
+              collapsed ? "justify-center px-2.5" : "gap-3 px-3"
+            }`}
           >
-            Logout
-          </span>
-        </button>
+            <LogOut size={20} strokeWidth={2.2} className="shrink-0" />
+            <span
+              className={`inline-block overflow-hidden whitespace-nowrap transition-[max-width,opacity] ${sidebarFade(collapsed)}`}
+            >
+              Logout
+            </span>
+          </button>
+        </form>
       </div>
     </aside>
   );

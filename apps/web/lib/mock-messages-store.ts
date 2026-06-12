@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useSyncExternalStore } from "react";
 import { conversationThreads as seedThreads } from "@/lib/mock-data";
 import type { ChatMessage, ConversationThread } from "@/lib/types/student";
 
@@ -43,16 +43,16 @@ function emitChange(): void {
   listeners.forEach((listener) => listener());
 }
 
-function ensureHydrated(): void {
+function hydrateFromStorage(): void {
   if (hydrated || typeof window === "undefined") {
     return;
   }
-  threads = loadThreads();
   hydrated = true;
+  threads = loadThreads();
+  emitChange();
 }
 
 function getSnapshot(): ConversationThread[] {
-  ensureHydrated();
   return threads;
 }
 
@@ -72,6 +72,10 @@ function persist(next: ConversationThread[]): void {
 }
 
 export function useMessagesStore() {
+  useEffect(() => {
+    hydrateFromStorage();
+  }, []);
+
   const threadList = useSyncExternalStore(
     subscribe,
     getSnapshot,

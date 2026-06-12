@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
 import { syncCommittedShift } from "@/app/(student)/scan/actions";
 import {
   committedShifts as seedCommittedShifts,
@@ -58,106 +58,143 @@ function saveState(state: MockStoreState): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
 
+const serverSnapshot = getInitialState();
+let state = getInitialState();
+const listeners = new Set<() => void>();
+let hydrated = false;
+
+function emitChange(): void {
+  listeners.forEach((listener) => listener());
+}
+
+function hydrateFromStorage(): void {
+  if (hydrated || typeof window === "undefined") {
+    return;
+  }
+  hydrated = true;
+  state = loadState();
+  emitChange();
+}
+
+function getSnapshot(): MockStoreState {
+  return state;
+}
+
+function getServerSnapshot(): MockStoreState {
+  return serverSnapshot;
+}
+
+function subscribe(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+function persist(next: MockStoreState): void {
+  state = next;
+  saveState(next);
+  emitChange();
+}
+
 export function useMockStore() {
-  const [state, setState] = useState<MockStoreState>(getInitialState);
-
   useEffect(() => {
-    setState(loadState());
+    hydrateFromStorage();
   }, []);
 
-  const persist = useCallback((next: MockStoreState) => {
-    setState(next);
-    saveState(next);
-  }, []);
-
-  const commitToShift = useCallback(
-    (shiftId: string): boolean => {
-      if (state.committedShiftIds.includes(shiftId)) {
-        return false;
-      }
-
-      const spotsLeft = state.shiftSpotsLeft[shiftId] ?? 0;
-      if (spotsLeft <= 0) {
-        return false;
-      }
-
-      persist({
-        ...state,
-        committedShiftIds: [...state.committedShiftIds, shiftId],
-        shiftSpotsLeft: {
-          ...state.shiftSpotsLeft,
-          [shiftId]: spotsLeft - 1,
-        },
-      });
-      void syncCommittedShift(shiftId);
-      return true;
-    },
-    [persist, state],
+  const current = useSyncExternalStore(
+    subscribe,
+    getSnapshot,
+    getServerSnapshot,
   );
+
+  const commitToShift = useCallback((shiftId: string): boolean => {
+    const snapshot = getSnapshot();
+    if (snapshot.committedShiftIds.includes(shiftId)) {
+      return false;
+    }
+
+    const spotsLeft = snapshot.shiftSpotsLeft[shiftId] ?? 0;
+    if (spotsLeft <= 0) {
+      return false;
+    }
+
+    persist({
+      ...snapshot,
+      committedShiftIds: [...snapshot.committedShiftIds, shiftId],
+      shiftSpotsLeft: {
+        ...snapshot.shiftSpotsLeft,
+        [shiftId]: spotsLeft - 1,
+      },
+    });
+    void syncCommittedShift(shiftId);
+    return true;
+  }, []);
 
   const isCommitted = useCallback(
-    (shiftId: string): boolean => state.committedShiftIds.includes(shiftId),
-    [state.committedShiftIds],
+    (shiftId: string): boolean =>
+      getSnapshot().committedShiftIds.includes(shiftId),
+    [],
   );
 
-  const toggleSavedShift = useCallback(
-    (shiftId: string): boolean => {
-      const isSaved = state.savedShiftIds.includes(shiftId);
-      const savedShiftIds = isSaved
-        ? state.savedShiftIds.filter((id) => id !== shiftId)
-        : [...state.savedShiftIds, shiftId];
+  const toggleSavedShift = useCallback((shiftId: string): boolean => {
+    const snapshot = getSnapshot();
+    const isSaved = snapshot.savedShiftIds.includes(shiftId);
+    const savedShiftIds = isSaved
+      ? snapshot.savedShiftIds.filter((id) => id !== shiftId)
+      : [...snapshot.savedShiftIds, shiftId];
 
-      persist({ ...state, savedShiftIds });
-      return !isSaved;
-    },
-    [persist, state],
-  );
+    persist({ ...snapshot, savedShiftIds });
+    return !isSaved;
+  }, []);
 
   const isSaved = useCallback(
-    (shiftId: string): boolean => state.savedShiftIds.includes(shiftId),
-    [state.savedShiftIds],
+    (shiftId: string): boolean =>
+      getSnapshot().savedShiftIds.includes(shiftId),
+    [],
   );
 
-  const toggleFollowOrg = useCallback(
-    (orgId: string): boolean => {
-      const isFollowing = state.followingOrgIds.includes(orgId);
-      const followingOrgIds = isFollowing
-        ? state.followingOrgIds.filter((id) => id !== orgId)
-        : [...state.followingOrgIds, orgId];
+  const toggleFollowOrg = useCallback((orgId: string): boolean => {
+    const snapshot = getSnapshot();
+    const isFollowing = snapshot.followingOrgIds.includes(orgId);
+    const followingOrgIds = isFollowing
+      ? snapshot.followingOrgIds.filter((id) => id !== orgId)
+      : [...snapshot.followingOrgIds, orgId];
 
-      persist({ ...state, followingOrgIds });
-      return !isFollowing;
-    },
-    [persist, state],
-  );
+    persist({ ...snapshot, followingOrgIds });
+    return !isFollowing;
+  }, []);
 
   const isFollowing = useCallback(
-    (orgId: string): boolean => state.followingOrgIds.includes(orgId),
-    [state.followingOrgIds],
+    (orgId: string): boolean =>
+      getSnapshot().followingOrgIds.includes(orgId),
+    [],
   );
 
   const getShifts = useCallback((): Shift[] => {
+    const snapshot = getSnapshot();
     return seedShifts.map((shift) => ({
       ...shift,
-      spotsLeft: state.shiftSpotsLeft[shift.id] ?? shift.spotsLeft,
-      saved: state.savedShiftIds.includes(shift.id),
-      committed: state.committedShiftIds.includes(shift.id),
+      spotsLeft: snapshot.shiftSpotsLeft[shift.id] ?? shift.spotsLeft,
+      saved: snapshot.savedShiftIds.includes(shift.id),
+      committed: snapshot.committedShiftIds.includes(shift.id),
     }));
-  }, [state]);
+  }, []);
 
   const getCommittedShifts = useCallback((): Shift[] => {
     return getShifts().filter((shift) => shift.committed);
   }, [getShifts]);
 
   const getOrganizations = useCallback((): Organization[] => {
+    const snapshot = getSnapshot();
     return seedOrganizations.map((org) => ({
       ...org,
-      following: state.followingOrgIds.includes(org.id),
+      following: snapshot.followingOrgIds.includes(org.id),
     }));
-  }, [state.followingOrgIds]);
+  }, []);
 
   return useMemo(
     () => ({
+      // Ties store identity to snapshot so list memos refresh after mutations.
+      revision: current,
       commitToShift,
       isCommitted,
       toggleSavedShift,
@@ -169,6 +206,7 @@ export function useMockStore() {
       getOrganizations,
     }),
     [
+      current,
       commitToShift,
       isCommitted,
       toggleSavedShift,

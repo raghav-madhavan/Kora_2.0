@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { ChevronRight, Loader2 } from "lucide-react";
 import { login, type LoginState } from "./actions";
@@ -12,24 +12,32 @@ export interface PersonaCard {
   avatar: string;
 }
 
-function PersonaRow({ persona, index }: { persona: PersonaCard; index: number }) {
+function PersonaRow({
+  persona,
+  index,
+  animate,
+}: {
+  persona: PersonaCard;
+  index: number;
+  animate: boolean;
+}) {
   const { pending, data } = useFormStatus();
   const isSubmitting = pending && data?.get("persona") === persona.id;
 
   return (
     <li
-      className="animate-rise"
-      style={{ animationDelay: `${index * 50}ms` }}
+      className={animate ? "animate-rise" : undefined}
+      style={animate ? { animationDelay: `${index * 50}ms` } : undefined}
     >
       <button
         type="submit"
         name="persona"
         value={persona.id}
         disabled={pending}
-        className="group flex w-full items-center gap-4 rounded-card bg-surface px-5 py-4 text-left shadow-card transition-[transform,box-shadow] duration-150 ease-soft hover:-translate-y-px hover:shadow-raised active:scale-[0.98] disabled:cursor-default motion-reduce:transition-none motion-reduce:hover:translate-y-0 motion-reduce:active:scale-100"
+        className="login-persona-btn group flex w-full items-center gap-4 rounded-card bg-surface px-5 py-4 text-left shadow-card active:scale-[0.98] disabled:cursor-default motion-reduce:active:scale-100"
       >
         <span
-          className={`flex min-w-0 flex-1 items-center gap-4 transition-[opacity,filter] duration-150 ease-soft ${
+          className={`flex min-w-0 flex-1 items-center gap-4 transition-[opacity,filter] duration-[160ms] ease-soft ${
             isSubmitting ? "opacity-70 blur-[2px]" : ""
           }`}
         >
@@ -59,7 +67,7 @@ function PersonaRow({ persona, index }: { persona: PersonaCard; index: number })
           <ChevronRight
             size={18}
             strokeWidth={2.2}
-            className="shrink-0 text-muted transition group-hover:text-primary"
+            className="shrink-0 text-muted transition-colors duration-[160ms] ease-soft group-hover:text-primary"
             aria-hidden
           />
         )}
@@ -70,16 +78,26 @@ function PersonaRow({ persona, index }: { persona: PersonaCard; index: number })
 }
 
 export function LoginPersonas({ personas }: { personas: PersonaCard[] }) {
+  const [animate, setAnimate] = useState(false);
   const [state, formAction] = useActionState<LoginState | null, FormData>(
     login,
     null,
   );
 
+  useEffect(() => {
+    setAnimate(true);
+  }, []);
+
   return (
     <form action={formAction} className="mt-8">
       <ul className="flex flex-col gap-3">
         {personas.map((persona, index) => (
-          <PersonaRow key={persona.id} persona={persona} index={index} />
+          <PersonaRow
+            key={persona.id}
+            persona={persona}
+            index={index}
+            animate={animate}
+          />
         ))}
       </ul>
       {state?.error ? (

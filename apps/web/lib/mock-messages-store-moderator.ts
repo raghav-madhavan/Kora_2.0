@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useSyncExternalStore } from "react";
 import { orgInboxThreads as seedThreads } from "@/lib/mock-data-moderator";
 import type { ChatMessage } from "@/lib/types/student";
 import type { OrgInboxThread } from "@/lib/types/moderator";
@@ -44,16 +44,16 @@ function emitChange(): void {
   listeners.forEach((listener) => listener());
 }
 
-function ensureHydrated(): void {
+function hydrateFromStorage(): void {
   if (hydrated || typeof window === "undefined") {
     return;
   }
-  threads = loadThreads();
   hydrated = true;
+  threads = loadThreads();
+  emitChange();
 }
 
 function getSnapshot(): OrgInboxThread[] {
-  ensureHydrated();
   return threads;
 }
 
@@ -73,6 +73,10 @@ function persist(next: OrgInboxThread[]): void {
 }
 
 export function useModeratorMessagesStore() {
+  useEffect(() => {
+    hydrateFromStorage();
+  }, []);
+
   const threadList = useSyncExternalStore(
     subscribe,
     getSnapshot,

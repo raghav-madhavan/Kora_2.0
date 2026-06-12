@@ -34,6 +34,12 @@ export async function login(
 
 export async function signOut(): Promise<void> {
   const store = await cookies();
-  store.delete(SESSION_COOKIE);
+  // Must match the path/options used at login or the browser keeps the cookie.
+  store.set(SESSION_COOKIE, "", {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+    maxAge: 0,
+  });
   redirect("/login");
 }

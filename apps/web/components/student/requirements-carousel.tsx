@@ -78,9 +78,11 @@ function SlideNatureBackdrop({
         alt=""
         fill
         sizes="(max-width: 768px) 100vw, 720px"
-        className={`slide-nature-photo object-cover ${isActive ? "slide-nature-photo-active" : ""}`}
+        quality={60}
+        className="slide-nature-photo object-cover"
         style={{ objectPosition: imagePosition }}
         priority={isActive}
+        loading={isActive ? "eager" : "lazy"}
       />
       <div
         className="absolute inset-0 opacity-[0.78]"
@@ -440,13 +442,6 @@ export function RequirementsCarousel() {
     endDrag(event.clientX);
   };
 
-  const handleSpotlight = (event: ReactPointerEvent<HTMLDivElement>) => {
-    const node = event.currentTarget;
-    const rect = node.getBoundingClientRect();
-    node.style.setProperty("--spot-x", `${event.clientX - rect.left}px`);
-    node.style.setProperty("--spot-y", `${event.clientY - rect.top}px`);
-  };
-
   const handlePointerCancel = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (!isDragging) {
       return;
@@ -512,7 +507,6 @@ export function RequirementsCarousel() {
         style={{ touchAction: "pan-y" }}
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
-        onMouseMove={handleSpotlight}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
@@ -551,10 +545,6 @@ export function RequirementsCarousel() {
           }}
         >
           {slides.map((slide, index) => {
-            if (index !== activeIndex) {
-              return null;
-            }
-
             const status = getStatus(slide.logged, slide.required);
             const pct = Math.round((slide.logged / slide.required) * 100);
             const isActive = index === activeIndex;
@@ -592,12 +582,6 @@ export function RequirementsCarousel() {
                     }}
                   />
                   <div className="slide-rule absolute inset-0" />
-                  <div
-                    className="slide-spotlight absolute inset-0"
-                    style={{
-                      background: `radial-gradient(280px circle at var(--spot-x, 50%) var(--spot-y, -20%), ${slide.accent}24, transparent 68%)`,
-                    }}
-                  />
                   <div className="slide-grain absolute inset-0" />
                 </div>
 

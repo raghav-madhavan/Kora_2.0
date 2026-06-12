@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useSyncExternalStore } from "react";
 import { moderatorNotifications as seedNotifications } from "@/lib/mock-data-moderator";
 import type { ModeratorNotification } from "@/lib/types/moderator";
 
@@ -43,16 +43,16 @@ function emitChange(): void {
   listeners.forEach((listener) => listener());
 }
 
-function ensureHydrated(): void {
+function hydrateFromStorage(): void {
   if (hydrated || typeof window === "undefined") {
     return;
   }
-  notifications = loadNotifications();
   hydrated = true;
+  notifications = loadNotifications();
+  emitChange();
 }
 
 function getSnapshot(): ModeratorNotification[] {
-  ensureHydrated();
   return notifications;
 }
 
@@ -72,6 +72,10 @@ function persist(next: ModeratorNotification[]): void {
 }
 
 export function useModeratorNotificationsStore() {
+  useEffect(() => {
+    hydrateFromStorage();
+  }, []);
+
   const notificationList = useSyncExternalStore(
     subscribe,
     getSnapshot,

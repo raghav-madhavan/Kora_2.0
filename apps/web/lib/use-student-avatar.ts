@@ -14,12 +14,12 @@ export function useStudentAvatar(): AvatarConfig {
   const { avatar } = useProfileStore();
   const hoursCtx = useHoursOptional();
   const verifiedHours = hoursCtx?.progress.verifiedHours ?? 0;
-  const normalized = normalizeAvatarConfig(avatar);
 
   return useMemo(() => {
+    const normalized = normalizeAvatarConfig(avatar);
     if (isHatUnlocked(normalized.hat, verifiedHours)) {
       return normalized;
     }
     return { ...normalized, hat: getHighestUnlockedHat(verifiedHours) };
-  }, [normalized, verifiedHours]);
+  }, [avatar, verifiedHours]);
 }

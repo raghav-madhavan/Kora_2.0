@@ -10,9 +10,7 @@ import { createOrgLogFromScan } from "@/lib/mock-store-server-moderator";
 import { generateShiftQrToken, verifyShiftQrToken } from "@/lib/qr-token";
 import {
   getAllHoursLogs,
-  getScannedLogs,
   getScannedShiftIds,
-  patchHoursLog,
   upsertHoursLog,
 } from "@/lib/student-hours-server";
 import type { ShiftLog } from "@/lib/types/student";
