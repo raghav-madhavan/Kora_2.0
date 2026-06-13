@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { PageShell } from "@/components/moderator/page-shell";
 import { VerificationDetail } from "@/components/moderator/verification-detail";
 import { requireModerator } from "@/lib/auth/guards";
+import { getAuditEntriesForLog } from "@/lib/moderator-audit-log";
 import { getOrgLogById } from "@/lib/mock-store-server-moderator";
 
 interface VerificationDetailPageProps {
@@ -19,9 +20,11 @@ export default async function VerificationDetailPage({
     notFound();
   }
 
+  const auditEntries = getAuditEntriesForLog(log.id);
+
   return (
     <PageShell>
-      <VerificationDetail initialLog={log} />
+      <VerificationDetail initialLog={log} auditEntries={auditEntries} />
     </PageShell>
   );
 }

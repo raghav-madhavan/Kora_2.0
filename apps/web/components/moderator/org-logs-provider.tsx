@@ -1,14 +1,12 @@
 "use client";
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
-} from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import {
   approveLog as approveLogAction,
+  approveLogs as approveLogsAction,
   rejectLog as rejectLogAction,
+  rejectLogs as rejectLogsAction,
 } from "@/app/(moderator)/moderator/verifications/actions";
 import { useModeratorNotificationsStore } from "@/lib/mock-notifications-store-moderator";
 import { mergeOrgLogs, useOrgLogsStore } from "@/lib/org-logs-store";
@@ -19,7 +17,10 @@ interface OrgLogsContextValue {
   pendingCount: number;
   flaggedCount: number;
   approve: (logId: string) => Promise<OrgShiftLog>;
-  reject: (logId: string, reason?: string) => Promise<OrgShiftLog>;
+  reject: (logId: string, reason: string) => Promise<OrgShiftLog>;
+  approveMany: (logIds: string[]) => Promise<OrgShiftLog[]>;
+  rejectMany: (logIds: string[], reason: string) => Promise<OrgShiftLog[]>;
+  refresh: () => void;
 }
 
 const OrgLogsContext = createContext<OrgLogsContextValue | null>(null);
@@ -31,8 +32,22 @@ export function OrgLogsProvider({
   initialLogs: OrgShiftLog[];
   children: React.ReactNode;
 }) {
-  const { decidedLogs, upsertDecidedLog } = useOrgLogsStore();
+  const {
+    decidedLogs,
+    upsertDecidedLog,
+    upsertDecidedLogs,
+    reconcileWithServer,
+  } = useOrgLogsStore();
   const { dismissForLog } = useModeratorNotificationsStore();
+  const router = useRouter();
+
+  // Server is the source of truth: whenever a fresh server render arrives (or
+  // the overlay hydrates from localStorage), drop optimistic overlay entries
+  // the server has already caught up on. Converges — reconcile only persists
+  // when it actually prunes, so this never loops.
+  useEffect(() => {
+    reconcileWithServer(initialLogs);
+  }, [initialLogs, decidedLogs, reconcileWithServer]);
 
   const logs = useMemo(
     () => mergeOrgLogs(initialLogs, decidedLogs),
@@ -50,7 +65,7 @@ export function OrgLogsProvider({
   );
 
   const reject = useCallback(
-    async (logId: string, reason?: string) => {
+    async (logId: string, reason: string) => {
       const updated = await rejectLogAction(logId, reason);
       upsertDecidedLog(updated);
       dismissForLog(logId);
@@ -59,6 +74,28 @@ export function OrgLogsProvider({
     [upsertDecidedLog, dismissForLog],
   );
 
+  const approveMany = useCallback(
+    async (logIds: string[]) => {
+      const updated = await approveLogsAction(logIds);
+      upsertDecidedLogs(updated);
+      updated.forEach((log) => dismissForLog(log.id));
+      return updated;
+    },
+    [upsertDecidedLogs, dismissForLog],
+  );
+
+  const rejectMany = useCallback(
+    async (logIds: string[], reason: string) => {
+      const updated = await rejectLogsAction(logIds, reason);
+      upsertDecidedLogs(updated);
+      updated.forEach((log) => dismissForLog(log.id));
+      return updated;
+    },
+    [upsertDecidedLogs, dismissForLog],
+  );
+
+  const refresh = useCallback(() => router.refresh(), [router]);
+
   const value = useMemo<OrgLogsContextValue>(
     () => ({
       logs,
@@ -66,8 +103,11 @@ export function OrgLogsProvider({
       flaggedCount: logs.filter((log) => log.status === "flagged").length,
       approve,
       reject,
+      approveMany,
+      rejectMany,
+      refresh,
     }),
-    [logs, approve, reject],
+    [logs, approve, reject, approveMany, rejectMany, refresh],
   );
 
   return (

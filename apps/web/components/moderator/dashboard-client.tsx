@@ -1,21 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useTransition } from "react";
 import {
   AlertTriangle,
   ArrowUpRight,
   BadgeCheck,
   CalendarDays,
-  Check,
   Clock3,
   QrCode,
 } from "lucide-react";
 import { DashboardNextAction } from "@/components/moderator/dashboard-next-action";
+import { DashboardReviewItem } from "@/components/moderator/dashboard-review-item";
 import { useOrgLogs } from "@/components/moderator/org-logs-provider";
 import { EmptyState } from "@/components/shared/empty-state";
 import { StatCard } from "@/components/shared/stat-card";
-import { useToast } from "@/components/student/toast-provider";
 import type { ModeratorShift } from "@/lib/types/moderator";
 
 function formatHours(hours: number): string {
@@ -27,10 +25,7 @@ export function DashboardClient({
 }: {
   upcomingShifts: ModeratorShift[];
 }) {
-  const { logs, pendingCount, flaggedCount, approve } = useOrgLogs();
-  const toast = useToast();
-  const [isPending, startTransition] = useTransition();
-  const [approvingId, setApprovingId] = useState<string | null>(null);
+  const { logs, pendingCount, flaggedCount } = useOrgLogs();
 
   const verifiedHours = logs
     .filter((log) => log.status === "verified")
@@ -38,25 +33,13 @@ export function DashboardClient({
 
   const needsReview = logs
     .filter((log) => log.status === "pending" || log.status === "flagged")
-    .slice(0, 4);
+    .slice(0, 8);
 
   const nextShift = upcomingShifts[0];
-
-  function handleApprove(logId: string, studentName: string) {
-    setApprovingId(logId);
-    startTransition(async () => {
-      try {
-        await approve(logId);
-        toast.success(`Hours approved for ${studentName}`);
-      } catch (err) {
-        toast.error(
-          err instanceof Error ? err.message : "Could not approve hours",
-        );
-      } finally {
-        setApprovingId(null);
-      }
-    });
-  }
+  const viewAllHref =
+    pendingCount + flaggedCount > 0
+      ? "/moderator/verifications?sort=oldest"
+      : "/moderator/verifications";
 
   return (
     <div className="flex flex-col gap-5">
@@ -101,7 +84,7 @@ export function DashboardClient({
               Needs review
             </h2>
             <Link
-              href="/moderator/verifications"
+              href={viewAllHref}
               className="flex items-center gap-1 text-[13px] font-semibold text-primary transition hover:text-primary-deep"
             >
               View all
@@ -118,52 +101,12 @@ export function DashboardClient({
             />
           ) : (
             <ul className="flex flex-col divide-y divide-black/5">
-              {needsReview.map((log) => (
-                <li
+              {needsReview.map((log, index) => (
+                <DashboardReviewItem
                   key={log.id}
-                  className="flex items-center gap-3 py-3 first:pt-0 last:pb-0"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={log.studentAvatar}
-                    alt=""
-                    className="h-11 w-11 shrink-0 rounded-xl bg-accent-lavender object-cover"
-                  />
-                  <Link
-                    href={`/moderator/verifications/${log.id}`}
-                    className="min-w-0 flex-1"
-                  >
-                    <p className="flex items-center gap-1.5 truncate text-[15px] font-bold transition hover:text-primary">
-                      {log.studentName}
-                      {log.status === "flagged" ? (
-                        <>
-                          <AlertTriangle
-                            size={14}
-                            strokeWidth={2.4}
-                            className="shrink-0 text-flagged"
-                            aria-hidden
-                          />
-                          <span className="sr-only">Flagged claim</span>
-                        </>
-                      ) : null}
-                    </p>
-                    <p className="truncate text-[12px] text-muted">
-                      {log.shiftTitle} · {log.date}
-                    </p>
-                  </Link>
-                  <span className="shrink-0 font-mono text-[13px] font-semibold">
-                    {formatHours(log.hours)} hrs
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => handleApprove(log.id, log.studentName)}
-                    disabled={isPending && approvingId === log.id}
-                    className="flex shrink-0 items-center gap-1.5 rounded-pill bg-primary px-3.5 py-1.5 text-[13px] font-semibold text-white transition hover:bg-primary-deep disabled:opacity-60"
-                  >
-                    <Check size={14} strokeWidth={2.6} />
-                    Approve
-                  </button>
-                </li>
+                  log={log}
+                  className={index >= 4 ? "hidden xl:flex" : ""}
+                />
               ))}
             </ul>
           )}

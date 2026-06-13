@@ -7,10 +7,12 @@ import {
   ArrowLeft,
   Check,
   ExternalLink,
+  FileClock,
   QrCode,
   X,
   XCircle,
 } from "lucide-react";
+import { FlagReviewGate } from "@/components/moderator/flag-review-gate";
 import { useOrgLogs } from "@/components/moderator/org-logs-provider";
 import { RejectReasonModal } from "@/components/moderator/reject-reason-modal";
 import { orgLogStatusConfig } from "@/components/moderator/verification-row";
@@ -21,17 +23,33 @@ import {
   getOrgLogHeroGradient,
   getOrgLogTimelineSteps,
 } from "@/lib/verifications";
-import type { OrgShiftLog } from "@/lib/types/moderator";
+import type {
+  ModeratorAuditEntry,
+  OrgShiftLog,
+} from "@/lib/types/moderator";
 
 function formatHours(hours: number): string {
   return Number.isInteger(hours) ? String(hours) : hours.toFixed(1);
 }
 
-export function VerificationDetail({ initialLog }: { initialLog: OrgShiftLog }) {
+interface VerificationDetailProps {
+  initialLog: OrgShiftLog;
+  /** Compact, back-link-free layout for the split-pane. */
+  embedded?: boolean;
+  /** Server-fetched audit trail (full page only). */
+  auditEntries?: ModeratorAuditEntry[];
+}
+
+export function VerificationDetail({
+  initialLog,
+  embedded = false,
+  auditEntries,
+}: VerificationDetailProps) {
   const { logs, approve, reject } = useOrgLogs();
   const toast = useToast();
   const [isPending, startTransition] = useTransition();
   const [rejectOpen, setRejectOpen] = useState(false);
+  const [gateOpen, setGateOpen] = useState(false);
 
   const log = logs.find((l) => l.id === initialLog.id) ?? initialLog;
   const status = orgLogStatusConfig[log.status];
@@ -39,8 +57,9 @@ export function VerificationDetail({ initialLog }: { initialLog: OrgShiftLog }) 
   const tint = tints[log.categoryTint];
   const timeline = getOrgLogTimelineSteps(log);
   const reviewable = log.status === "pending" || log.status === "flagged";
+  const decidedById = log.verifiedByModeratorId ?? log.rejectedByModeratorId;
 
-  function handleApprove() {
+  function runApprove() {
     startTransition(async () => {
       try {
         await approve(log.id);
@@ -51,6 +70,14 @@ export function VerificationDetail({ initialLog }: { initialLog: OrgShiftLog }) 
         );
       }
     });
+  }
+
+  function handleApproveClick() {
+    if (log.status === "flagged") {
+      setGateOpen(true);
+      return;
+    }
+    runApprove();
   }
 
   function handleReject(reason: string) {
@@ -67,18 +94,23 @@ export function VerificationDetail({ initialLog }: { initialLog: OrgShiftLog }) 
     });
   }
 
+  const showDecisionRecord =
+    Boolean(log.decidedAt) || (auditEntries?.length ?? 0) > 0;
+
   return (
     <div>
-      <Link
-        href="/moderator/verifications"
-        className="mb-6 inline-flex items-center gap-2 text-[14px] font-semibold text-muted transition hover:text-primary"
-      >
-        <ArrowLeft size={16} />
-        Back to Verifications
-      </Link>
+      {!embedded ? (
+        <Link
+          href="/moderator/verifications"
+          className="mb-6 inline-flex items-center gap-2 text-[14px] font-semibold text-muted transition hover:text-primary"
+        >
+          <ArrowLeft size={16} />
+          Back to Verifications
+        </Link>
+      ) : null}
 
       <div
-        className="mb-6 rounded-card p-6 shadow-card sm:p-8"
+        className={`mb-6 rounded-card shadow-card ${embedded ? "p-5" : "p-6 sm:p-8"}`}
         style={{ background: getOrgLogHeroGradient(log.status) }}
       >
         <div className="flex flex-wrap items-center gap-3">
@@ -104,16 +136,28 @@ export function VerificationDetail({ initialLog }: { initialLog: OrgShiftLog }) 
             )}
           </span>
         </div>
-        <p className="mt-4 font-display text-[36px] font-semibold leading-none tracking-tight">
+        <p
+          className={`mt-4 font-display font-semibold leading-none tracking-tight tabular-nums ${
+            embedded ? "text-[28px]" : "text-[36px]"
+          }`}
+        >
           {formatHours(log.hours)} hrs
         </p>
-        <h1 className="mt-3 text-[22px] font-bold">{log.shiftTitle}</h1>
+        <h1 className={`mt-3 font-bold ${embedded ? "text-[18px]" : "text-[22px]"}`}>
+          {log.shiftTitle}
+        </h1>
         <p className="mt-2 text-[15px] text-ink/80">
           {log.studentName} · {log.date}
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div
+        className={
+          embedded
+            ? "flex flex-col gap-6"
+            : "grid grid-cols-1 gap-6 lg:grid-cols-2"
+        }
+      >
         <section className="rounded-card bg-surface p-6 shadow-card">
           <h2 className="text-[18px] font-bold">Claim</h2>
 
@@ -170,9 +214,9 @@ export function VerificationDetail({ initialLog }: { initialLog: OrgShiftLog }) 
             <div className="mt-6 flex flex-wrap gap-3">
               <button
                 type="button"
-                onClick={handleApprove}
+                onClick={handleApproveClick}
                 disabled={isPending}
-                className="inline-flex items-center gap-1.5 rounded-pill bg-primary px-5 py-2.5 text-[14px] font-semibold text-white transition hover:bg-primary-deep disabled:opacity-60"
+                className="inline-flex items-center gap-1.5 rounded-pill bg-primary px-5 py-2.5 text-[14px] font-semibold text-white transition hover:bg-primary-deep active:scale-[0.97] disabled:opacity-60"
               >
                 <Check size={15} strokeWidth={2.6} />
                 {isPending ? "Working…" : "Approve hours"}
@@ -181,7 +225,7 @@ export function VerificationDetail({ initialLog }: { initialLog: OrgShiftLog }) 
                 type="button"
                 onClick={() => setRejectOpen(true)}
                 disabled={isPending}
-                className="inline-flex items-center gap-1.5 rounded-pill px-5 py-2.5 text-[14px] font-semibold text-danger transition hover:bg-danger/10 disabled:opacity-60"
+                className="inline-flex items-center gap-1.5 rounded-pill px-5 py-2.5 text-[14px] font-semibold text-danger transition hover:bg-danger/10 active:scale-[0.97] disabled:opacity-60"
               >
                 <X size={15} strokeWidth={2.6} />
                 Reject
@@ -198,33 +242,91 @@ export function VerificationDetail({ initialLog }: { initialLog: OrgShiftLog }) 
           </Link>
         </section>
 
-        <section className="rounded-card bg-surface p-6 shadow-card">
-          <h2 className="text-[18px] font-bold">Timeline</h2>
-          <ol className="mt-6 space-y-0">
-            {timeline.map((step, index) => (
-              <li key={step.id} className="relative flex gap-4 pb-6 last:pb-0">
-                {index < timeline.length - 1 ? (
+        {showDecisionRecord ? (
+          <section className="rounded-card bg-surface p-6 shadow-card">
+            <h2 className="flex items-center gap-2 text-[18px] font-bold">
+              <FileClock size={18} strokeWidth={2.2} className="text-muted" />
+              Decision record
+            </h2>
+            <dl className="mt-4 space-y-2 text-[13px]">
+              {log.decidedAt ? (
+                <div className="flex justify-between gap-4">
+                  <dt className="text-muted">Decided</dt>
+                  <dd className="font-semibold">
+                    {formatOrgLogDateTime(log.decidedAt)}
+                  </dd>
+                </div>
+              ) : null}
+              {decidedById ? (
+                <div className="flex justify-between gap-4">
+                  <dt className="text-muted">Moderator</dt>
+                  <dd className="font-mono text-[12px] font-semibold">
+                    {decidedById}
+                  </dd>
+                </div>
+              ) : null}
+            </dl>
+
+            {auditEntries && auditEntries.length > 0 ? (
+              <ul className="mt-4 space-y-3 border-t border-black/5 pt-4">
+                {auditEntries.map((entry) => (
+                  <li key={entry.id} className="text-[13px]">
+                    <div className="flex items-center justify-between gap-3">
+                      <span
+                        className={`font-semibold ${
+                          entry.action === "approve"
+                            ? "text-success"
+                            : "text-danger"
+                        }`}
+                      >
+                        {entry.action === "approve" ? "Approved" : "Rejected"}
+                      </span>
+                      <span className="text-muted">
+                        {formatOrgLogDateTime(entry.timestamp)}
+                      </span>
+                    </div>
+                    <p className="mt-0.5 font-mono text-[11px] text-muted">
+                      {entry.moderatorId}
+                    </p>
+                    {entry.reason ? (
+                      <p className="mt-1 text-muted">“{entry.reason}”</p>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </section>
+        ) : null}
+
+        {!embedded ? (
+          <section className="rounded-card bg-surface p-6 shadow-card">
+            <h2 className="text-[18px] font-bold">Timeline</h2>
+            <ol className="mt-6 space-y-0">
+              {timeline.map((step, index) => (
+                <li key={step.id} className="relative flex gap-4 pb-6 last:pb-0">
+                  {index < timeline.length - 1 ? (
+                    <span
+                      className={`absolute left-[11px] top-6 h-full w-px ${
+                        step.complete ? "bg-primary/40" : "bg-black/10"
+                      }`}
+                    />
+                  ) : null}
                   <span
-                    className={`absolute left-[11px] top-6 h-full w-px ${
-                      step.complete ? "bg-primary/40" : "bg-black/10"
+                    className={`relative z-10 mt-0.5 h-6 w-6 shrink-0 rounded-full border-2 ${
+                      step.complete
+                        ? "border-primary bg-primary"
+                        : "border-black/15 bg-canvas"
                     }`}
                   />
-                ) : null}
-                <span
-                  className={`relative z-10 mt-0.5 h-6 w-6 shrink-0 rounded-full border-2 ${
-                    step.complete
-                      ? "border-primary bg-primary"
-                      : "border-black/15 bg-canvas"
-                  }`}
-                />
-                <div>
-                  <p className="text-[14px] font-bold">{step.label}</p>
-                  <p className="mt-1 text-[13px] text-muted">{step.detail}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
-        </section>
+                  <div>
+                    <p className="text-[14px] font-bold">{step.label}</p>
+                    <p className="mt-1 text-[13px] text-muted">{step.detail}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </section>
+        ) : null}
       </div>
 
       <RejectReasonModal
@@ -233,6 +335,17 @@ export function VerificationDetail({ initialLog }: { initialLog: OrgShiftLog }) 
         busy={isPending}
         onClose={() => setRejectOpen(false)}
         onConfirm={handleReject}
+      />
+      <FlagReviewGate
+        open={gateOpen}
+        flagReason={log.flagReason ?? "Held for review per school policy."}
+        subject={`${log.studentName}'s claim`}
+        busy={isPending}
+        onConfirm={() => {
+          setGateOpen(false);
+          runApprove();
+        }}
+        onCancel={() => setGateOpen(false)}
       />
     </div>
   );

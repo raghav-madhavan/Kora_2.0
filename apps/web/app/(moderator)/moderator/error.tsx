@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect } from "react";
 import { PageShell } from "@/components/moderator/page-shell";
+import { useModeratorSession } from "@/components/moderator/session-provider";
+import { portalHome } from "@/lib/auth/policy";
 
 export default function ModeratorError({
   error,
@@ -11,6 +13,9 @@ export default function ModeratorError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const { session } = useModeratorSession();
+  const homeHref = portalHome(session);
+
   useEffect(() => {
     console.error(error);
   }, [error]);
@@ -35,10 +40,10 @@ export default function ModeratorError({
               Try again
             </button>
             <Link
-              href="/moderator"
+              href={homeHref}
               className="rounded-pill bg-accent-lavender px-5 py-2.5 text-[14px] font-semibold text-primary transition hover:bg-primary hover:text-white"
             >
-              Dashboard
+              Back to portal
             </Link>
           </div>
         </div>

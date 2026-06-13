@@ -130,3 +130,88 @@ export function filterOrgLogs(
 
   return filtered;
 }
+
+export type OrgLogSort = "newest" | "oldest" | "hours-desc";
+
+const SORT_VALUES: OrgLogSort[] = ["newest", "oldest", "hours-desc"];
+
+export function toOrgLogSort(raw: string | null): OrgLogSort | null {
+  return SORT_VALUES.includes(raw as OrgLogSort) ? (raw as OrgLogSort) : null;
+}
+
+function completedTime(log: OrgShiftLog): number {
+  return new Date(log.completedAt).getTime();
+}
+
+/**
+ * Triage ordering. `oldest` surfaces the longest-waiting claim first so SLAs
+ * stay visible; `hours-desc` puts the highest-impact decisions up top. Sort is
+ * pure and stable on ties (falls back to oldest-first).
+ */
+export function sortOrgLogs(
+  logs: OrgShiftLog[],
+  mode: OrgLogSort,
+): OrgShiftLog[] {
+  const copy = [...logs];
+  if (mode === "oldest") {
+    return copy.sort((a, b) => completedTime(a) - completedTime(b));
+  }
+  if (mode === "hours-desc") {
+    return copy.sort(
+      (a, b) => b.hours - a.hours || completedTime(a) - completedTime(b),
+    );
+  }
+  return copy.sort((a, b) => completedTime(b) - completedTime(a));
+}
+
+export interface FraudCluster {
+  key: string;
+  shiftId: string;
+  shiftTitle: string;
+  hours: number;
+  flagReason: string;
+  logs: OrgShiftLog[];
+  logIds: string[];
+}
+
+/**
+ * Detect fraud clusters from flagged claims: 3+ students logging identical
+ * unverified hours on the same shift with the same hold reason. Mirrors the
+ * product rule (3+ identical unverified hours within 10 minutes) on the
+ * existing `flagReason` seam — no live fraud engine required.
+ */
+export function groupFlaggedByReason(
+  logs: OrgShiftLog[],
+  minSize = 3,
+): FraudCluster[] {
+  const groups = new Map<string, OrgShiftLog[]>();
+
+  for (const log of logs) {
+    if (log.status !== "flagged" || !log.flagReason) continue;
+    const key = `${log.shiftId}|${log.hours}|${log.flagReason}`;
+    const bucket = groups.get(key);
+    if (bucket) {
+      bucket.push(log);
+    } else {
+      groups.set(key, [log]);
+    }
+  }
+
+  const clusters: FraudCluster[] = [];
+  for (const [key, members] of groups) {
+    const first = members[0];
+    if (members.length < minSize || !first) continue;
+    clusters.push({
+      key,
+      shiftId: first.shiftId,
+      shiftTitle: first.shiftTitle,
+      hours: first.hours,
+      flagReason: first.flagReason ?? "",
+      logs: members,
+      logIds: members.map((m) => m.id),
+    });
+  }
+
+  // Largest cluster first — the most urgent mitigation.
+  return clusters.sort((a, b) => b.logs.length - a.logs.length);
+}

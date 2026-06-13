@@ -1,7 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, BadgeCheck, CalendarDays, QrCode } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowRight,
+  BadgeCheck,
+  CalendarDays,
+  QrCode,
+} from "lucide-react";
 import { useOrgLogs } from "@/components/moderator/org-logs-provider";
 import type { ModeratorShift } from "@/lib/types/moderator";
 
@@ -27,7 +33,15 @@ export function DashboardNextAction({
   const nextShift = upcomingShifts[0];
 
   let action: NextAction;
-  if (reviewCount > 0) {
+  if (flaggedCount >= 3) {
+    action = {
+      eyebrow: "Fraud check",
+      headline: `Review ${flaggedCount} flagged claims`,
+      subline: "Possible cluster — triage them together",
+      href: "/moderator/verifications?status=flagged&cluster=open",
+      icon: AlertTriangle,
+    };
+  } else if (reviewCount > 0) {
     action = {
       eyebrow: "Up next",
       headline: `Review ${reviewCount} claim${reviewCount === 1 ? "" : "s"}`,
@@ -35,7 +49,7 @@ export function DashboardNextAction({
         flaggedCount > 0
           ? `${flaggedCount} held by fraud checks`
           : "Manual claims are waiting on you",
-      href: "/moderator/verifications",
+      href: "/moderator/verifications?sort=oldest",
       icon: BadgeCheck,
     };
   } else if (nextShift) {

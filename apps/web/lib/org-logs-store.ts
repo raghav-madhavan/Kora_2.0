@@ -19,6 +19,29 @@ export function mergeOrgLogs(
     );
 }
 
+/**
+ * Server-wins overlay reconciliation. The server is the source of truth, but
+ * an optimistic client decision must survive until the server catches up.
+ *
+ * Drop an overlay entry only when the server's copy carries a decision
+ * (`decidedAt`) that is at least as new as the overlay's — i.e. the server has
+ * caught up, or another moderator decided more recently. Overlay entries with
+ * no server counterpart (e.g. a freshly scanned claim) are always kept.
+ */
+export function reconcileOverlay(
+  serverLogs: OrgShiftLog[],
+  overlays: OrgShiftLog[],
+): OrgShiftLog[] {
+  const serverById = new Map(serverLogs.map((log) => [log.id, log]));
+  return overlays.filter((overlay) => {
+    const server = serverById.get(overlay.id);
+    if (!server) return true;
+    if (!server.decidedAt) return true;
+    if (!overlay.decidedAt) return false;
+    return server.decidedAt < overlay.decidedAt;
+  });
+}
+
 interface OrgLogsState {
   decidedLogs: OrgShiftLog[];
 }
@@ -100,18 +123,36 @@ export function useOrgLogsStore() {
     getServerSnapshot,
   );
 
-  const upsertDecidedLog = useCallback((log: OrgShiftLog) => {
+  const upsertDecidedLogs = useCallback((incoming: OrgShiftLog[]) => {
+    if (incoming.length === 0) return;
     const current = getSnapshot();
+    const incomingIds = new Set(incoming.map((log) => log.id));
     persist({
       decidedLogs: [
-        log,
-        ...current.decidedLogs.filter((l) => l.id !== log.id),
+        ...incoming,
+        ...current.decidedLogs.filter((l) => !incomingIds.has(l.id)),
       ],
     });
+  }, []);
+
+  const upsertDecidedLog = useCallback(
+    (log: OrgShiftLog) => upsertDecidedLogs([log]),
+    [upsertDecidedLogs],
+  );
+
+  /** Prune overlay entries the server has caught up on (server wins). */
+  const reconcileWithServer = useCallback((serverLogs: OrgShiftLog[]) => {
+    const current = getSnapshot();
+    const next = reconcileOverlay(serverLogs, current.decidedLogs);
+    if (next.length !== current.decidedLogs.length) {
+      persist({ decidedLogs: next });
+    }
   }, []);
 
   return {
     decidedLogs: logsState.decidedLogs,
     upsertDecidedLog,
+    upsertDecidedLogs,
+    reconcileWithServer,
   };
 }

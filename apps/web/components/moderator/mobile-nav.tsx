@@ -45,7 +45,11 @@ export function MobileNav({ qrHref }: { qrHref: string }) {
           ) : null}
 
           <Link
-            href="/moderator/verifications"
+            href={
+              pendingCount > 0
+                ? "/moderator/verifications?status=pending&sort=oldest"
+                : "/moderator/verifications"
+            }
             className={`relative flex min-w-[56px] flex-col items-center gap-1 rounded-chip px-2 py-1.5 text-[10px] font-semibold transition ${
               pathname.startsWith("/moderator/verifications")
                 ? "text-primary"

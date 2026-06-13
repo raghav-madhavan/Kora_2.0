@@ -1,7 +1,12 @@
 import Link from "next/link";
 import { PageShell } from "@/components/moderator/page-shell";
+import { getSession } from "@/lib/auth/guards";
+import { portalHome } from "@/lib/auth/policy";
 
-export default function ModeratorNotFound() {
+export default async function ModeratorNotFound() {
+  const session = await getSession();
+  const homeHref = session ? portalHome(session) : "/moderator/shifts";
+
   return (
     <PageShell>
       <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -15,10 +20,10 @@ export default function ModeratorNotFound() {
           </p>
           <nav className="mt-8 flex flex-wrap justify-center gap-3">
             <Link
-              href="/moderator"
+              href={homeHref}
               className="rounded-pill bg-primary px-5 py-2.5 text-[14px] font-semibold text-white transition hover:bg-primary-deep"
             >
-              Dashboard
+              Back to portal
             </Link>
             <Link
               href="/moderator/verifications"
