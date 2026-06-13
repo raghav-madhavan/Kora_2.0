@@ -44,7 +44,7 @@ Kora replaces forged paper signatures and legacy software (x2VOL) with a single 
 ## Getting started
 
 ```bash
-git clone https://github.com/VGGladiator/Kora_2.0.git
+git clone https://github.com/raghav-madhavan/Kora_2.0.git
 cd Kora_2.0
 npm install
 cp .env.example .env.local   # fill in secrets
